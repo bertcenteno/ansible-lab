@@ -1,0 +1,21 @@
+---
+- name: Configure all Linux servers
+  hosts: all
+  become: true
+
+  roles:
+    - common
+
+- name: Configure Web Servers
+  hosts: webservers
+  become: true
+
+  roles:
+    - apache
+
+- name: Configure Database Servers
+  hosts: dbservers
+  become: true
+
+  roles:
+    - mariadb

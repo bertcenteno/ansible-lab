@@ -1,0 +1,6 @@
+*.retry
+*.log
+.vault_pass
+*.pem
+*.key
+inventory.local.yml

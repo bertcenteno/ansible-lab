@@ -1,0 +1,24 @@
+---
+- name: Update package cache on Ubuntu
+  ansible.builtin.apt:
+    update_cache: true
+    cache_valid_time: 3600
+  when: ansible_facts['os_family'] == "Debian"
+
+- name: Update package cache on Rocky
+  ansible.builtin.dnf:
+    update_cache: true
+  when: ansible_facts['os_family'] == "RedHat"
+
+- name: Install common packages
+  ansible.builtin.package:
+    name:
+      - vim
+      - git
+      - curl
+      - wget
+      - tree
+      - htop
+      - unzip
+      - rsync
+    state: present
