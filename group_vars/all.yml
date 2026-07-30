@@ -1,0 +1,10 @@
+---
+common_packages:
+  - vim
+  - git
+  - curl
+  - wget
+  - tree
+  - htop
+  - unzip
+  - rsync

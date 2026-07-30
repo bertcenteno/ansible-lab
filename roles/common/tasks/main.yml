@@ -12,13 +12,5 @@
 
 - name: Install common packages
   ansible.builtin.package:
-    name:
-      - vim
-      - git
-      - curl
-      - wget
-      - tree
-      - htop
-      - unzip
-      - rsync
+    name: "{{ common_packages }}"
     state: present
