@@ -1,2 +1,9 @@
 ---
-# tasks file for users
+- name: Create managed users
+  ansible.builtin.user:
+    name: "{{ item.username }}"
+    comment: "{{ item.fullname }}"
+    shell: "{{ item.shell }}"
+    create_home: true
+    state: present
+  loop: "{{ managed_users }}"

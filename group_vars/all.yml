@@ -8,3 +8,14 @@ common_packages:
   - htop
   - unzip
   - rsync
+
+managed_users:
+  - username: devops
+    fullname: DevOps Administrator
+    shell: /bin/bash
+    sudo: true
+
+  - username: ansible
+    fullname: Automation Account
+    shell: /bin/bash
+    sudo: false

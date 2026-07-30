@@ -4,18 +4,28 @@
   become: true
 
   roles:
-    - common
+    - role: common
+      tags:
+        - common
+
+    - role: users
+      tags:
+        - users
 
 - name: Configure Web Servers
   hosts: webservers
   become: true
 
   roles:
-    - apache
+    - role: apache
+      tags:
+        - apache
 
 - name: Configure Database Servers
   hosts: dbservers
   become: true
 
   roles:
-    - mariadb
+    - role: mariadb
+      tags:
+        - mariadb
