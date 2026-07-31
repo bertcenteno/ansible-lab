@@ -1,2 +1,14 @@
 ---
-# handlers file for apache
+- name: Restart Apache on Ubuntu
+  ansible.builtin.service:
+    name: apache2
+    state: restarted
+  when: ansible_facts['os_family'] == "Debian"
+  listen: Restart Apache
+
+- name: Restart Apache on Rocky
+  ansible.builtin.service:
+    name: httpd
+    state: restarted
+  when: ansible_facts['os_family'] == "Rocky"
+  listen: Restart Apache

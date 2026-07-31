@@ -1,2 +1,36 @@
 ---
-# tasks file for apache
+- name: Install Apache on Ubuntu
+  ansible.builtin.apt:
+    name: apache2
+    state: present
+    update_cache: true
+  when: ansible_facts['os_family'] == "Debian"
+
+- name: Install Apache on Rocky
+  ansible.builtin.dnf:
+    name: httpd
+    state: present
+  when: ansible_facts['os_family'] == "Rocky"
+
+- name: Ensure Apache is enabled and running on Ubuntu
+  ansible.builtin.service:
+    name: apache2
+    state: started
+    enabled: true
+  when: ansible_facts['os_family'] == "Debian"
+
+- name: Ensure Apache is enabled and running on Rocky
+  ansible.builtin.service:
+    name: httpd
+    state: started
+    enabled: true
+  when: ansible_facts['os_family'] == "Rocky"
+
+- name: Deploy Apache landing page
+  ansible.builtin.template:
+    src: index.html.j2
+    dest: /var/www/html/index.html
+    owner: root
+    group: root
+    mode: "0644"
+  notify: Restart Apache

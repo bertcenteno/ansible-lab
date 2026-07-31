@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ansible Web Server</title>
+</head>
+<body>
+    <h1>Welcome to the Ansible Lab</h1>
+
+    <p><strong>Hostname:</strong> {{ ansible_facts['hostname'] }}</p>
+    <p><strong>Operating System:</strong> {{ ansible_facts['distribution'] }}</p>
+    <p><strong>OS Version:</strong> {{ ansible_facts['distribution_version'] }}</p>
+    <p><strong>IP Address:</strong> {{ ansible_facts['default_ipv4']['address'] }}</p>
+    <p><strong>CPU Cores:</strong> {{ ansible_facts['processor_cores'] }}</p>
+    <p><strong>Total RAM (MB):</strong> {{ ansible_facts['memtotal_mb'] }}</p>
+
+    <hr>
+    <p>This web server is managed by Ansible.</p>
+</body>
+</html>
