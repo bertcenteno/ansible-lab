@@ -1,2 +1,46 @@
 ---
-# tasks file for chrony
+- name: Install Chrony on Debian
+  ansible.builtin.apt:
+    name: chrony
+    state: present
+  when: ansible_facts['os_family'] == "Debian"
+
+- name: Install Chrony on Rocky
+  ansible.builtin.dnf:
+    name: chrony
+    state: present
+  when: ansible_facts['os_family'] == "Rocky"
+
+- name: Ensure Chrony service is enabled and running
+  ansible.builtin.service:
+    name: chronyd
+    enabled: true
+    state: started
+  when: ansible_facts['os_family'] == "Rocky"
+
+- name: Ensure Chrony service is enabled and running
+  ansible.builtin.service:
+    name: chrony
+    enabled: true
+    state: started
+  when: ansible_facts['os_family'] == "Debian"
+
+- name: Deploy Chrony configuration on Ubuntu
+  ansible.builtin.template:
+    src: chrony.conf.j2
+    dest: /etc/chrony/chrony.conf
+    owner: root
+    group: root
+    mode: "0644"
+  notify: Restart Chrony
+  when: ansible_facts['os_family'] == "Debian"
+
+- name: Deploy Chrony configuration on Rocky
+  ansible.builtin.template:
+    src: chrony.conf.j2
+    dest: /etc/chrony.conf
+    owner: root
+    group: root
+    mode: "0644"
+  notify: Restart Chrony
+  when: ansible_facts['os_family'] == "Rocky"

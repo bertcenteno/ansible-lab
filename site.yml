@@ -12,6 +12,10 @@
       tags:
         - users
 
+    - role: chrony
+      tags:
+        - chrony
+
 - name: Configure Web Servers
   hosts: webservers
   become: true

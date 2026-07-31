@@ -1,0 +1,14 @@
+# Managed by Ansible
+# Do not edit manually.
+
+{% for server in chrony_servers %}
+server {{ server }} iburst
+{% endfor %}
+
+driftfile /var/lib/chrony/drift
+
+makestep 1.0 3
+
+rtcsync
+
+logdir /var/log/chrony

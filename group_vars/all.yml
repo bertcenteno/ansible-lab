@@ -19,3 +19,7 @@ managed_users:
     fullname: Automation Account
     shell: /bin/bash
     sudo: false
+
+chrony_servers:
+  - time.google.com
+  - time.cloudflare.com
