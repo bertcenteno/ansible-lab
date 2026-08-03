@@ -23,3 +23,8 @@ managed_users:
 chrony_servers:
   - time.google.com
   - time.cloudflare.com
+
+# MariaDB Configuration
+mariadb_database: ansible_lab
+mariadb_user: ansible
+mariadb_password: mdscsi    

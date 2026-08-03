@@ -1,2 +1,28 @@
 ---
-# tasks file for mariadb
+- name: Install MariaDB Server
+  ansible.builtin.dnf:
+    name:
+      - mariadb-server
+      - python3-PyMySQL
+    state: present
+
+- name: Enable and start MariaDB
+  ansible.builtin.service:
+    name: mariadb
+    state: started
+    enabled: true
+
+- name: Create application database
+  community.mysql.mysql_db:
+    name: "{{ mariadb_database }}"
+    state: present
+    login_unix_socket: /var/lib/mysql/mysql.sock
+
+- name: Create application database user
+  community.mysql.mysql_user:
+    name: "{{ mariadb_user }}"
+    password: "{{ mariadb_password }}"
+    host: "%"
+    priv: "{{ mariadb_database }}.*:ALL"
+    state: present
+    login_unix_socket: /var/lib/mysql/mysql.sock
