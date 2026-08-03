@@ -1,0 +1,46 @@
+---
+- name: Install dnf plugins
+  ansible.builtin.dnf:
+    name: dnf-plugins-core
+    state: present
+
+- name: Configure Docker CE repository
+  ansible.builtin.yum_repository:
+    name: docker-ce-stable
+    description: Docker CE Stable Repository
+    baseurl: https://download.docker.com/linux/centos/9/$basearch/stable
+    enabled: true
+    gpgcheck: true
+    gpgkey: https://download.docker.com/linux/centos/gpg
+
+- name: Install Docker packages
+  ansible.builtin.dnf:
+    name: "{{ docker_packages }}"
+    state: present
+
+- name: Enable and start Docker
+  ansible.builtin.service:
+    name: docker
+    state: started
+    enabled: true
+
+- name: Add users to docker group
+  ansible.builtin.user:
+    name: "{{ item }}"
+    groups: docker
+    append: true
+  loop: "{{ docker_users }}"
+
+- name: Install Docker Python dependencies
+  ansible.builtin.dnf:
+    name: "{{ docker_python_packages }}"
+    state: present
+
+- name: Deploy Docker containers
+  community.docker.docker_container:
+    name: "{{ item.name }}"
+    image: "{{ item.image }}"
+    state: started
+    restart_policy: unless-stopped
+    published_ports: "{{ item.published_ports | default(omit) }}"
+  loop: "{{ docker_containers }}" 

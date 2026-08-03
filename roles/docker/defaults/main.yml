@@ -1,0 +1,20 @@
+---
+docker_packages:
+  - docker-ce
+  - docker-ce-cli
+  - containerd.io
+  - docker-buildx-plugin
+  - docker-compose-plugin
+
+docker_python_packages:
+  - python3-requests
+  - python3-docker    
+
+docker_users:
+  - devops
+
+docker_containers:
+  - name: nginx
+    image: nginx:latest
+    published_ports:
+      - "80:80"

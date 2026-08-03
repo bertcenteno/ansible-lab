@@ -33,3 +33,12 @@
     - role: mariadb
       tags:
         - mariadb
+
+- name: Configure Docker Hosts
+  hosts: dockerhosts
+  become: true
+
+  roles:
+    - role: docker
+      tags:
+        - docker
