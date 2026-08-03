@@ -1,0 +1,15 @@
+name: {{ compose_project_name }}
+
+services:
+{% for service_name, service in compose_services.items() %}
+  {{ service_name }}:
+    image: {{ service.image }}
+
+{% if service.ports is defined %}
+    ports:
+{% for port in service.ports %}
+      - "{{ port }}"
+{% endfor %}
+{% endif %}
+
+{% endfor %}

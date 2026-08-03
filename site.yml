@@ -42,3 +42,6 @@
     - role: docker
       tags:
         - docker
+    - role: docker_compose
+      tags:
+        - docker_compose

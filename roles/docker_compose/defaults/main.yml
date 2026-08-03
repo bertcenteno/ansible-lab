@@ -1,0 +1,10 @@
+---
+compose_project_name: nginx
+compose_project_dir: "/opt/compose/{{ compose_project_name }}"
+compose_state: present
+
+compose_services:
+  nginx:
+    image: nginx:latest
+    ports:
+      - "8080:80"
