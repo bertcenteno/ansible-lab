@@ -24,6 +24,8 @@ Production-style Ansible automation lab built on Proxmox.
 - Handlers
 - Git feature branching
 - Ansible Vault for secrets management
+- Docker Role
+- Docker Container Deployment
 
 ## Run
 
