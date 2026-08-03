@@ -4,7 +4,7 @@ Production-style Ansible automation lab built on Proxmox.
 
 ## Environment
 
-- Ubuntu 24.04 Control Node (soon)
+- Ubuntu 24.04 Control Node
 - Ubuntu Managed Server
 - Rocky Linux Managed Server
 
@@ -14,7 +14,7 @@ Production-style Ansible automation lab built on Proxmox.
 - Users
 - Chrony
 - Apache
-- MariaDB (In Progress)
+- MariaDB
 
 ## Features
 
@@ -23,6 +23,7 @@ Production-style Ansible automation lab built on Proxmox.
 - Jinja2 templates
 - Handlers
 - Git feature branching
+- Ansible Vault for secrets management
 
 ## Run
 

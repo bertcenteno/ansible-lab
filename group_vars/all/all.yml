@@ -27,4 +27,3 @@ chrony_servers:
 # MariaDB Configuration
 mariadb_database: ansible_lab
 mariadb_user: ansible
-mariadb_password: mdscsi    
