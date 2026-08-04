@@ -1,10 +1,79 @@
 ---
-compose_project_name: nginx
-compose_project_dir: "/opt/compose/{{ compose_project_name }}"
+compose_base_dir: /opt/compose
 compose_state: present
+compose_projects:
 
-compose_services:
-  nginx:
-    image: nginx:latest
-    ports:
-      - "8080:80"
+  - name: nginx
+    services:
+      nginx:
+        image: nginx:latest
+        restart: unless-stopped
+        ports:
+          - "8080:80"
+
+        healthcheck:
+          test:
+            - CMD
+            - curl
+            - "-f"
+            - http://localhost
+
+          interval: 30s
+          timeout: 10s
+          retries: 3
+
+        environment: {}
+        volumes: []
+        networks: []
+        command: ""
+
+  - name: portainer
+    services:
+      portainer:
+        image: portainer/portainer-ce:latest
+        restart: unless-stopped
+        ports:
+          - "9000:9000"
+        environment: {}
+        volumes:
+          - "/var/run/docker.sock:/var/run/docker.sock"
+          - "portainer_data:/data"
+        networks: []
+        command: ""
+    volumes:
+      portainer_data: {} 
+
+  - name: mariadb
+
+    volumes:
+      mysql_data: {}
+
+    services:
+      mariadb:
+        image: mariadb:latest
+
+        restart: unless-stopped
+
+        environment:
+          MYSQL_DATABASE: "{{ mariadb_database }}"
+          MYSQL_USER: "{{ mariadb_user }}"
+          MYSQL_PASSWORD: "{{ vault_mariadb_password }}"
+          MYSQL_ROOT_PASSWORD: "{{ vault_mariadb_root_password }}"
+
+        volumes:
+          - "mysql_data:/var/lib/mysql"
+
+        healthcheck:
+          test:
+            - CMD
+            - healthcheck.sh
+            - "--connect"
+            - "--innodb_initialized"
+
+          interval: 30s
+          timeout: 10s
+          retries: 5
+
+        networks: []
+
+        command: ""

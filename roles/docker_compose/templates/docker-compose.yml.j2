@@ -1,15 +1,72 @@
-name: {{ compose_project_name }}
+name: {{ item.name }}
 
 services:
-{% for service_name, service in compose_services.items() %}
+{% for service_name, service in item.services.items() %}
   {{ service_name }}:
     image: {{ service.image }}
 
-{% if service.ports is defined %}
+{% if service.restart is defined %}
+    restart: {{ service.restart }}
+{% endif %}
+
+{% if service.healthcheck is defined %}
+    healthcheck:
+      test:
+{% for command in service.healthcheck.test %}
+        - {{ command }}
+{% endfor %}
+
+{% if service.healthcheck.interval is defined %}
+      interval: {{ service.healthcheck.interval }}
+{% endif %}
+
+{% if service.healthcheck.timeout is defined %}
+      timeout: {{ service.healthcheck.timeout }}
+{% endif %}
+
+{% if service.healthcheck.retries is defined %}
+      retries: {{ service.healthcheck.retries }}
+{% endif %}
+
+{% endif %}
+
+{% if service.command is defined and service.command %}
+    command: {{ service.command }}
+{% endif %}
+
+{% if service.ports is defined and service.ports %}
     ports:
 {% for port in service.ports %}
       - "{{ port }}"
 {% endfor %}
 {% endif %}
 
+{% if service.environment is defined and service.environment %}
+    environment:
+{% for key, value in service.environment.items() %}
+      {{ key }}: "{{ value }}"
 {% endfor %}
+{% endif %}
+
+{% if service.volumes is defined and service.volumes %}
+    volumes:
+{% for volume in service.volumes %}
+      - "{{ volume }}"
+{% endfor %}
+{% endif %}
+
+{% if service.networks is defined and service.networks %}
+    networks:
+{% for network in service.networks %}
+      - {{ network }}
+{% endfor %}
+{% endif %}
+
+{% endfor %}
+
+{% if item.volumes is defined and item.volumes %}
+volumes:
+{% for volume_name in item.volumes.keys() %}
+  {{ volume_name }}:
+{% endfor %}
+{% endif %}
