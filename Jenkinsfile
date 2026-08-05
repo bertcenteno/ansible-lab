@@ -98,6 +98,12 @@ pipeline {
 
     post {
 
+        always {
+            sh '''
+            rm -f .vault_pass || true
+            '''
+        }
+
         success {
             echo 'Deployment completed successfully'
         }
@@ -107,12 +113,6 @@ pipeline {
             echo 'Deployment failed'
         }
 
-
-        always {
-            sh '''
-            rm -f .vault_pass || true
-            '''
-        }
 
     }
 
