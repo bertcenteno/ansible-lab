@@ -46,6 +46,11 @@ stage('Get Git Information') {
                 script: "git config --get remote.origin.url | sed 's#.*/##;s/.git\$//'",
                 returnStdout: true
             ).trim()
+	    env.GIT_COMMIT_MESSAGE = sh(
+	    script: "git log -1 --pretty=format:%s",
+	    returnStdout: true
+	    ).trim()
+
         }
     }
 }
@@ -181,6 +186,10 @@ post {
   "value": "${GIT_COMMIT_SHORT}"
 },
 {
+  "title": "Message",
+  "value": "${GIT_COMMIT_MESSAGE}"
+},
+{
   "title": "Author",
   "value": "${GIT_AUTHOR_NAME}"
 },
@@ -266,6 +275,10 @@ EOF
 {
   "title": "Commit",
   "value": "${GIT_COMMIT_SHORT}"
+},
+{
+  "title": "Message",
+  "value": "${GIT_COMMIT_MESSAGE}"
 },
 {
   "title": "Author",
