@@ -2,6 +2,12 @@ pipeline {
 
     agent any
 
+	options {
+    	timestamps()
+	disableConcurrentBuilds()
+
+	}
+
     environment {
         ANSIBLE_CONTROLLER = "ansible@172.26.8.51"
         ANSIBLE_DIR = "/home/ansible/ansible-lab"
