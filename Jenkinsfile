@@ -172,11 +172,45 @@ failure {
         curl -H "Content-Type: application/json" \
         -d @- "$TEAMS_WEBHOOK" <<EOF
 {
-  "text": "❌ Jenkins Deployment Failed\n\nJob: ${JOB_NAME}\nBuild: ${BUILD_NUMBER}\nStatus: FAILED"
+  "type": "message",
+  "attachments": [
+    {
+      "contentType": "application/vnd.microsoft.card.adaptive",
+      "content": {
+        "\$schema": "http://adaptivecards.io/schemas/adaptive-card.json",
+        "type": "AdaptiveCard",
+        "version": "1.4",
+        "body": [
+          {
+            "type": "TextBlock",
+            "size": "Large",
+            "weight": "Bolder",
+            "text": "❌ Jenkins Deployment Failed"
+          },
+          {
+            "type": "FactSet",
+            "facts": [
+              {
+                "title": "Job",
+                "value": "${JOB_NAME}"
+              },
+              {
+                "title": "Build",
+                "value": "#${BUILD_NUMBER}"
+              },
+              {
+                "title": "Status",
+                "value": "FAILED"
+              }
+            ]
+          }
+        ]
+      }
+    }
+  ]
 }
 EOF
         '''
-
     }
 }
 
