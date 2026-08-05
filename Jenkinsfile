@@ -17,16 +17,6 @@ pipeline {
         }
 
 
-        stage('Test SSH Credential') {
-            steps {
-                sshagent(['ansible-controller-key']) {
-                    sh '''
-                    ssh -o StrictHostKeyChecking=no ${ANSIBLE_CONTROLLER} hostname
-                    '''
-                }
-            }
-        }
-
 
         stage('Validate Ansible Syntax') {
             steps {
