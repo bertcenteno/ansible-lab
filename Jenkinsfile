@@ -22,7 +22,33 @@ pipeline {
                 checkout scm
             }
         }
+	
 
+stage('Get Git Information') {
+    steps {
+        script {
+            env.GIT_COMMIT_SHORT = sh(
+                script: "git rev-parse --short HEAD",
+                returnStdout: true
+            ).trim()
+
+            env.GIT_BRANCH_NAME = sh(
+                script: "git branch --show-current",
+                returnStdout: true
+            ).trim()
+
+            env.GIT_AUTHOR_NAME = sh(
+                script: "git log -1 --pretty=format:%an",
+                returnStdout: true
+            ).trim()
+
+            env.GIT_REPOSITORY = sh(
+                script: "git config --get remote.origin.url | sed 's#.*/##;s/.git\$//'",
+                returnStdout: true
+            ).trim()
+        }
+    }
+}
 
 
         stage('Validate Ansible Syntax') {
@@ -137,14 +163,32 @@ post {
                 "title": "Build",
                 "value": "#${BUILD_NUMBER}"
               },
-              {
-                "title": "Status",
-                "value": "SUCCESS"
-              },
-              {
-                "title": "Duration",
-                "value": "${BUILD_TIME}"
-              }
+		
+		{
+  "title": "Status",
+  "value": "SUCCESS"
+},
+{
+  "title": "Repository",
+  "value": "${GIT_REPOSITORY}"
+},
+{
+  "title": "Branch",
+  "value": "${GIT_BRANCH_NAME}"
+},
+{
+  "title": "Commit",
+  "value": "${GIT_COMMIT_SHORT}"
+},
+{
+  "title": "Author",
+  "value": "${GIT_AUTHOR_NAME}"
+},
+{
+  "title": "Duration",
+  "value": "${BUILD_TIME}"
+}
+
             ]
           },
           {
@@ -206,14 +250,32 @@ EOF
                 "title": "Build",
                 "value": "#${BUILD_NUMBER}"
               },
-              {
-                "title": "Status",
-                "value": "FAILED"
-              },
-              {
-                "title": "Duration",
-                "value": "${BUILD_TIME}"
-              }
+
+{
+  "title": "Status",
+  "value": "SUCCESS"
+},
+{
+  "title": "Repository",
+  "value": "${GIT_REPOSITORY}"
+},
+{
+  "title": "Branch",
+  "value": "${GIT_BRANCH_NAME}"
+},
+{
+  "title": "Commit",
+  "value": "${GIT_COMMIT_SHORT}"
+},
+{
+  "title": "Author",
+  "value": "${GIT_AUTHOR_NAME}"
+},
+{
+  "title": "Duration",
+  "value": "${BUILD_TIME}"
+}
+            
             ]
           },
           {
