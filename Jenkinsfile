@@ -115,7 +115,7 @@ success {
 
         sh '''
         curl -H "Content-Type: application/json" \
-        -d @- "$TEAMS_WEBHOOK" <<EOF
+        -d @- "$TEAMS_WEBHOOK" <<EOF || true
 {
   "type": "message",
   "attachments": [
@@ -170,7 +170,7 @@ failure {
 
         sh '''
         curl -H "Content-Type: application/json" \
-        -d @- "$TEAMS_WEBHOOK" <<EOF
+        -d @- "$TEAMS_WEBHOOK" <<EOF || true
 {
   "type": "message",
   "attachments": [
