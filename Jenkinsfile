@@ -100,6 +100,17 @@ stage('Get Git Information') {
         }
 
 
+stage('Approval to Deploy') {
+
+    steps {
+
+        input message: 'Proceed with Ansible deployment?',
+              ok: 'Deploy Now'
+
+    }
+
+}
+
         stage('Run Ansible Playbook') {
             steps {
                 sshagent(['ansible-controller-key']) {
