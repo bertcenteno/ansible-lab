@@ -8,7 +8,6 @@ pipeline {
         VAULT_PASSWORD = credentials('ansible-vault-password')
     }
 
-
     stages {
 
         stage('Checkout from GitHub') {
@@ -17,15 +16,17 @@ pipeline {
             }
         }
 
-	stage('Test SSH Credential') {
-	    steps {
-	        sshagent(['ansible-controller-key']) {
-    	        sh '''
-       	    	 ssh -o StrictHostKeyChecking=no ${ANSIBLE_CONTROLLER} hostname
-       		     '''
-    	    }
-   	 }
-	}
+
+        stage('Test SSH Credential') {
+            steps {
+                sshagent(['ansible-controller-key']) {
+                    sh '''
+                    ssh -o StrictHostKeyChecking=no ${ANSIBLE_CONTROLLER} hostname
+                    '''
+                }
+            }
+        }
+
 
         stage('Validate Ansible Syntax') {
             steps {
@@ -41,50 +42,54 @@ pipeline {
         }
 
 
-stage('Sync Repository to Ansible Controller') {
-    steps {
-        sshagent(['ansible-controller-key']) {
-            sh '''
-            rsync -avz --delete \
-            --exclude ".git" \
-            --exclude ".gitignore" \
-            --exclude "Jenkinsfile" \
-            ./ \
-            ${ANSIBLE_CONTROLLER}:${ANSIBLE_DIR}/
-            '''
+        stage('Sync Repository to Ansible Controller') {
+            steps {
+                sshagent(['ansible-controller-key']) {
+                    sh '''
+                    rsync -avz --delete \
+                    --exclude ".git" \
+                    --exclude ".gitignore" \
+                    --exclude "Jenkinsfile" \
+                    ./ \
+                    ${ANSIBLE_CONTROLLER}:${ANSIBLE_DIR}/
+                    '''
+                }
+            }
         }
-    }
-}
 
 
-stage('Install Ansible Dependencies') {
-    steps {
-        sshagent(['ansible-controller-key']) {
-            sh '''
-            ssh ${ANSIBLE_CONTROLLER} "
-            cd ${ANSIBLE_DIR} &&
-            ansible-galaxy collection install -r requirements.yml
-            "
-            '''
+        stage('Install Ansible Dependencies') {
+            steps {
+                sshagent(['ansible-controller-key']) {
+                    sh '''
+                    ssh ${ANSIBLE_CONTROLLER} "
+                    cd ${ANSIBLE_DIR} &&
+                    ansible-galaxy collection install -r requirements.yml
+                    "
+                    '''
+                }
+            }
         }
-    }
-}
 
-stage('Run Ansible Playbook') {
-    steps {
-        sshagent(['ansible-controller-key']) {
-            sh '''
-            ssh ${ANSIBLE_CONTROLLER} "
-            cd ${ANSIBLE_DIR} &&
-            echo '${VAULT_PASSWORD}' > .vault_pass &&
-            chmod 600 .vault_pass &&
-            ansible-playbook site.yml &&
-            rm -f .vault_pass
-            "
-            '''
+
+        stage('Run Ansible Playbook') {
+            steps {
+                sshagent(['ansible-controller-key']) {
+                    sh '''
+                    ssh ${ANSIBLE_CONTROLLER} "
+                    cd ${ANSIBLE_DIR} &&
+                    echo '${VAULT_PASSWORD}' > .vault_pass &&
+                    chmod 600 .vault_pass &&
+                    ansible-playbook site.yml &&
+                    rm -f .vault_pass
+                    "
+                    '''
+                }
+            }
         }
+
     }
-}
+
 
     post {
 
@@ -92,9 +97,18 @@ stage('Run Ansible Playbook') {
             echo 'Deployment completed successfully'
         }
 
+
         failure {
             echo 'Deployment failed'
         }
 
+
+        always {
+            sh '''
+            rm -f .vault_pass || true
+            '''
+        }
+
     }
+
 }
