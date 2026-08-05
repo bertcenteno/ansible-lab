@@ -102,7 +102,7 @@ post {
     success {
 
         script {
-            env.BUILD_TIME = currentBuild.durationString
+            BUILD_TIME = currentBuild.durationString
         }
 
         echo 'Deployment completed successfully'
@@ -144,7 +144,7 @@ post {
               },
               {
                 "title": "Duration",
-                "value": "${BUILD_TIME}"
+                "value": "${currentBuild.durationString}"
               }
             ]
           },
@@ -171,7 +171,7 @@ EOF
     failure {
 
         script {
-            env.BUILD_TIME = currentBuild.durationString
+            BUILD_TIME = currentBuild.durationString
         }
 
         echo 'Deployment failed'
@@ -213,7 +213,7 @@ EOF
               },
               {
                 "title": "Duration",
-                "value": "${BUILD_TIME}"
+                "value": "${currentBuild.durationString}"
               }
             ]
           },
