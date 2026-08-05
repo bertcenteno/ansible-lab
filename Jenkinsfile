@@ -101,7 +101,7 @@ post {
     success {
 
         script {
-            env.BUILD_TIME = currentBuild.durationString
+            env.BUILD_TIME = "${currentBuild.duration / 1000} seconds"
         }
 
         echo 'Deployment completed successfully'
@@ -170,7 +170,7 @@ EOF
     failure {
 
         script {
-            env.BUILD_TIME = currentBuild.durationString
+            env.BUILD_TIME = "${currentBuild.duration / 1000} seconds"
         }
 
         echo 'Deployment failed'
