@@ -33,7 +33,7 @@ stage('Get Git Information') {
             ).trim()
 
             env.GIT_BRANCH_NAME = sh(
-                script: "git branch --show-current",
+                script: "git name-rev --name-only HEAD | sed 's#remotes/origin/##'",
                 returnStdout: true
             ).trim()
 
