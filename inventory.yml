@@ -3,25 +3,9 @@ all:
     ansible_user: infra
     ansible_python_interpreter: /usr/bin/python3
 
-  hosts:
-    web01:
-      ansible_host: 172.26.8.61
-
-    db01:
-      ansible_host: 172.26.8.62
-
-    docker01:
-      ansible_host: 172.26.8.63
-
   children:
-    webservers:
-      hosts:
-        web01:
-
-    dbservers:
-      hosts:
-        db01:
 
     dockerhosts:
       hosts:
         docker01:
+          ansible_host: 172.26.8.63

@@ -1,6 +1,6 @@
 ---
-- name: Configure all Linux servers
-  hosts: all
+- name: Configure Docker Hosts
+  hosts: dockerhosts
   become: true
 
   roles:
@@ -16,32 +16,10 @@
       tags:
         - chrony
 
-- name: Configure Web Servers
-  hosts: webservers
-  become: true
-
-  roles:
-    - role: apache
-      tags:
-        - apache
-
-- name: Configure Database Servers
-  hosts: dbservers
-  become: true
-
-  roles:
-    - role: mariadb
-      tags:
-        - mariadb
-
-- name: Configure Docker Hosts
-  hosts: dockerhosts
-  become: true
-
-  roles:
     - role: docker
       tags:
         - docker
+
     - role: docker_compose
       tags:
         - docker_compose

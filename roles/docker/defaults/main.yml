@@ -12,6 +12,7 @@ docker_python_packages:
 
 docker_users:
   - devops
+  - "{{ ansible_user }}"
 
 docker_containers:
   - name: nginx
