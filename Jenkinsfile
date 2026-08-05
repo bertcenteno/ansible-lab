@@ -13,7 +13,6 @@ pipeline {
         ANSIBLE_DIR = "/home/ansible/ansible-lab"
         VAULT_PASSWORD = credentials('ansible-vault-password')
         TEAMS_WEBHOOK = credentials('teams-webhook-url')
-	BUILD_TIME = ""
     }
 
     stages {
@@ -102,7 +101,7 @@ post {
     success {
 
         script {
-            def buildTime = currentBuild.durationString
+            env.BUILD_TIME = currentBuild.durationString
         }
 
         echo 'Deployment completed successfully'
@@ -144,7 +143,7 @@ post {
               },
               {
                 "title": "Duration",
-                "value": "${buildTime}"
+                "value": "${BUILD_TIME}"
               }
             ]
           },
@@ -171,7 +170,7 @@ EOF
     failure {
 
         script {
-            def buildTime = currentBuild.durationString
+            env.BUILD_TIME = currentBuild.durationString
         }
 
         echo 'Deployment failed'
@@ -213,7 +212,7 @@ EOF
               },
               {
                 "title": "Duration",
-                "value": "${buildTime}"
+                "value": "${BUILD_TIME}"
               }
             ]
           },
