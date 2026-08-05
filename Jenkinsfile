@@ -117,14 +117,47 @@ success {
         curl -H "Content-Type: application/json" \
         -d @- "$TEAMS_WEBHOOK" <<EOF
 {
-  "text": "✅ Jenkins Deployment Successful\n\nJob: ${JOB_NAME}\nBuild: ${BUILD_NUMBER}\nStatus: SUCCESS"
+  "type": "message",
+  "attachments": [
+    {
+      "contentType": "application/vnd.microsoft.card.adaptive",
+      "content": {
+        "\$schema": "http://adaptivecards.io/schemas/adaptive-card.json",
+        "type": "AdaptiveCard",
+        "version": "1.4",
+        "body": [
+          {
+            "type": "TextBlock",
+            "size": "Large",
+            "weight": "Bolder",
+            "text": "✅ Jenkins Deployment Successful"
+          },
+          {
+            "type": "FactSet",
+            "facts": [
+              {
+                "title": "Job",
+                "value": "${JOB_NAME}"
+              },
+              {
+                "title": "Build",
+                "value": "#${BUILD_NUMBER}"
+              },
+              {
+                "title": "Status",
+                "value": "SUCCESS"
+              }
+            ]
+          }
+        ]
+      }
+    }
+  ]
 }
 EOF
         '''
-
     }
 }
-
 
 failure {
 
