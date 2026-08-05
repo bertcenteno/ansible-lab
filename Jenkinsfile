@@ -13,6 +13,7 @@ pipeline {
         ANSIBLE_DIR = "/home/ansible/ansible-lab"
         VAULT_PASSWORD = credentials('ansible-vault-password')
         TEAMS_WEBHOOK = credentials('teams-webhook-url')
+	BUILD_TIME = ""
     }
 
     stages {
@@ -98,21 +99,18 @@ pipeline {
 
 post {
 
-    always {
+    success {
+
+        script {
+            env.BUILD_TIME = currentBuild.durationString
+        }
+
+        echo 'Deployment completed successfully'
+
         sh '''
-        rm -f .vault_pass || true
-        '''
-    }
-
-
-success {
-
-    echo 'Deployment completed successfully'
-
-    sh '''
-    curl -s \
-    -H "Content-Type: application/json" \
-    -d @- "$TEAMS_WEBHOOK" <<EOF || true
+        curl -s \
+        -H "Content-Type: application/json" \
+        -d @- "$TEAMS_WEBHOOK" <<EOF || true
 {
   "type": "message",
   "attachments": [
@@ -146,7 +144,7 @@ success {
               },
               {
                 "title": "Duration",
-                "value": "${BUILD_DURATION}"
+                "value": "${BUILD_TIME}"
               }
             ]
           },
@@ -166,17 +164,22 @@ success {
   ]
 }
 EOF
-    '''
-}
+        '''
+    }
 
-failure {
 
-    echo 'Deployment failed'
+    failure {
 
-    sh '''
-    curl -s \
-    -H "Content-Type: application/json" \
-    -d @- "$TEAMS_WEBHOOK" <<EOF || true
+        script {
+            env.BUILD_TIME = currentBuild.durationString
+        }
+
+        echo 'Deployment failed'
+
+        sh '''
+        curl -s \
+        -H "Content-Type: application/json" \
+        -d @- "$TEAMS_WEBHOOK" <<EOF || true
 {
   "type": "message",
   "attachments": [
@@ -210,7 +213,7 @@ failure {
               },
               {
                 "title": "Duration",
-                "value": "${BUILD_DURATION}"
+                "value": "${BUILD_TIME}"
               }
             ]
           },
@@ -230,8 +233,8 @@ failure {
   ]
 }
 EOF
-    '''
-}
+        '''
+    }
 
 }
 
