@@ -262,7 +262,7 @@ EOF
 
 {
   "title": "Status",
-  "value": "SUCCESS"
+  "value": "FAILED"
 },
 {
   "title": "Repository",
