@@ -36,6 +36,9 @@ pipeline {
             steps {
                 sh '''
                 rsync -avz --delete \
+		--exclude ".git" \
+		--exclude ".gitignore" \
+		--exclude "Jenkinsfile" \
                 ./ \
                 ${ANSIBLE_CONTROLLER}:${ANSIBLE_DIR}/
                 '''
