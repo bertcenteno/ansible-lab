@@ -12,6 +12,7 @@ pipeline {
         ANSIBLE_CONTROLLER = "ansible@172.26.8.51"
         ANSIBLE_DIR = "/home/ansible/ansible-lab"
         VAULT_PASSWORD = credentials('ansible-vault-password')
+        TEAMS_WEBHOOK = credentials('teams-webhook-url')
     }
 
     stages {
@@ -108,14 +109,10 @@ success {
 
     echo 'Deployment completed successfully'
 
-    withCredentials([
-        string(credentialsId: 'teams-webhook-url',
-        variable: 'TEAMS_WEBHOOK')
-    ]) {
-
-        sh '''
-        curl -H "Content-Type: application/json" \
-        -d @- "$TEAMS_WEBHOOK" <<EOF || true
+    sh '''
+    curl -s \
+    -H "Content-Type: application/json" \
+    -d @- "$TEAMS_WEBHOOK" <<EOF || true
 {
   "type": "message",
   "attachments": [
@@ -146,6 +143,20 @@ success {
               {
                 "title": "Status",
                 "value": "SUCCESS"
+              },
+              {
+                "title": "Duration",
+                "value": "${BUILD_DURATION}"
+              }
+            ]
+          },
+          {
+            "type": "ActionSet",
+            "actions": [
+              {
+                "type": "Action.OpenUrl",
+                "title": "View Jenkins Build",
+                "url": "${BUILD_URL}"
               }
             ]
           }
@@ -155,22 +166,17 @@ success {
   ]
 }
 EOF
-        '''
-    }
+    '''
 }
 
 failure {
 
     echo 'Deployment failed'
 
-    withCredentials([
-        string(credentialsId: 'teams-webhook-url',
-        variable: 'TEAMS_WEBHOOK')
-    ]) {
-
-        sh '''
-        curl -H "Content-Type: application/json" \
-        -d @- "$TEAMS_WEBHOOK" <<EOF || true
+    sh '''
+    curl -s \
+    -H "Content-Type: application/json" \
+    -d @- "$TEAMS_WEBHOOK" <<EOF || true
 {
   "type": "message",
   "attachments": [
@@ -201,6 +207,20 @@ failure {
               {
                 "title": "Status",
                 "value": "FAILED"
+              },
+              {
+                "title": "Duration",
+                "value": "${BUILD_DURATION}"
+              }
+            ]
+          },
+          {
+            "type": "ActionSet",
+            "actions": [
+              {
+                "type": "Action.OpenUrl",
+                "title": "View Jenkins Build",
+                "url": "${BUILD_URL}"
               }
             ]
           }
@@ -210,8 +230,7 @@ failure {
   ]
 }
 EOF
-        '''
-    }
+    '''
 }
 
 }
