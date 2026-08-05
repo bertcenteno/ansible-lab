@@ -66,13 +66,22 @@ pipeline {
             steps {
                 sshagent(['ansible-controller-key']) {
                     sh '''
-                    ssh ${ANSIBLE_CONTROLLER} "
-                    cd ${ANSIBLE_DIR} &&
-                    echo '${VAULT_PASSWORD}' > .vault_pass &&
-                    chmod 600 .vault_pass &&
-                    ansible-playbook site.yml &&
-                    rm -f .vault_pass
-                    "
+		    echo "$VAULT_PASSWORD" > vault_pass.tmp
+	            chmod 600 vault_pass.tmp
+
+            		scp vault_pass.tmp ${ANSIBLE_CONTROLLER}:${ANSIBLE_DIR}/.vault_pass
+
+            		ssh ${ANSIBLE_CONTROLLER} "
+            		cd ${ANSIBLE_DIR} &&
+        	    ansible-playbook site.yml
+	            "
+
+       		     ssh ${ANSIBLE_CONTROLLER} "
+       	   	  	rm -f ${ANSIBLE_DIR}/.vault_pass
+   	        	 "
+
+	            rm -f vault_pass.tmp
+
                     '''
                 }
             }
