@@ -95,25 +95,52 @@ pipeline {
 
     }
 
+post {
 
-    post {
-
-        always {
-            sh '''
-            rm -f .vault_pass || true
-            '''
-        }
-
-        success {
-            echo 'Deployment completed successfully'
-        }
-
-
-        failure {
-            echo 'Deployment failed'
-        }
-
-
+    always {
+        sh '''
+        rm -f .vault_pass || true
+        '''
     }
+
+
+    success {
+
+        echo 'Deployment completed successfully'
+
+        withCredentials([
+            string(credentialsId: 'teams-webhook-url',
+            variable: 'TEAMS_WEBHOOK')
+        ]) {
+
+            sh '''
+            curl -H "Content-Type: application/json" \
+            -d "{\"text\":\"✅ Jenkins Deployment Successful\\n\\nJob: ${JOB_NAME}\\nBuild: ${BUILD_NUMBER}\\nStatus: SUCCESS\"}" \
+            "$TEAMS_WEBHOOK"
+            '''
+
+        }
+    }
+
+
+    failure {
+
+        echo 'Deployment failed'
+
+        withCredentials([
+            string(credentialsId: 'teams-webhook-url',
+            variable: 'TEAMS_WEBHOOK')
+        ]) {
+
+            sh '''
+            curl -H "Content-Type: application/json" \
+            -d "{\"text\":\"❌ Jenkins Deployment Failed\\n\\nJob: ${JOB_NAME}\\nBuild: ${BUILD_NUMBER}\\nStatus: FAILED\"}" \
+            "$TEAMS_WEBHOOK"
+            '''
+
+        }
+    }
+
+}
 
 }
