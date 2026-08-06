@@ -99,15 +99,17 @@ stage('Get Git Information') {
             }
         }
 
+
 stage('Approval to Deploy') {
 
     steps {
 
         script {
-try {
 
-def approval = input(
-    message: """
+            try {
+
+                def approval = input(
+                    message: """
 Deployment Request |
 Repository: ${GIT_REPOSITORY} |
 Branch: ${GIT_BRANCH_NAME} |
@@ -118,15 +120,16 @@ Build: #${BUILD_NUMBER}
 
 Proceed with Ansible deployment?
 """,
-    ok: 'Deploy Now',
-    submitterParameter: 'APPROVER'
-)
+                    ok: 'Deploy Now',
+                    submitterParameter: 'APPROVER'
+                )
 
-env.APPROVER = approval ['APPROVER']
-echo "Approved by: ${env.APPROVER}"
+                env.APPROVER = approval['APPROVER']
 
-}
-             catch (err) {
+                echo "Approved by: ${env.APPROVER}"
+
+            }
+            catch (err) {
 
                 currentBuild.result = 'ABORTED'
 
@@ -139,6 +142,7 @@ echo "Approved by: ${env.APPROVER}"
     }
 
 }
+
 
         stage('Run Ansible Playbook') {
             steps {
