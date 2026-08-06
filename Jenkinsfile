@@ -247,20 +247,12 @@ post {
                 "value": "#${BUILD_NUMBER}"
               },
               {
-                "title": "Environement",
+                "title": "Environment",
                 "value": "#${params.DEPLOY_ENV}"
               },
 		{
   "title": "Status",
   "value": "SUCCESS"
-},
-{
-  "title": "Environment",
-  "value": "${params.DEPLOY_ENV}"
-},
-{
-  "title": "Environment",
-  "value": "${DEPLOY_ENV}"
 },
 {
   "title": "Approved By",
