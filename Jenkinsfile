@@ -104,8 +104,36 @@ stage('Approval to Deploy') {
 
     steps {
 
-        input message: 'Proceed with Ansible deployment?',
-              ok: 'Deploy Now'
+        script {
+
+            def approvalMessage = """
+Deployment Request
+
+Repository:
+${GIT_REPOSITORY}
+
+Branch:
+${GIT_BRANCH_NAME}
+
+Commit:
+${GIT_COMMIT_SHORT}
+
+Message:
+${GIT_COMMIT_MESSAGE}
+
+Author:
+${GIT_AUTHOR_NAME}
+
+
+Proceed with Ansible deployment?
+"""
+
+            input(
+                message: approvalMessage,
+                ok: 'Deploy Now'
+            )
+
+        }
 
     }
 
