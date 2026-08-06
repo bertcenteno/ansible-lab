@@ -231,6 +231,7 @@ stage('Run Ansible Playbook') {
                     cd ${ANSIBLE_DIR} &&
                     ansible-playbook \
 		    -i inventories/${DEPLOY_ENV.toLowerCase()}/hosts \
+		    --vault-password-file .vault_pass \
                     site.yml
                 "
 
