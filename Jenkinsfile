@@ -216,11 +216,13 @@ post {
 
         script {
             env.BUILD_TIME = "${currentBuild.duration / 1000} seconds"
+	    env.DEPLOY_ENV_VALUE = params.DEPLOY_ENV ?: "UNKNOWN"
         }
 
         echo 'Deployment completed successfully'
 
         sh """
+	echo "Environment value = '${DEPLOY_ENV_VALUE}'"
         curl -s \
         -H "Content-Type: application/json" \
         -d @- "\$TEAMS_WEBHOOK" <<EOF
