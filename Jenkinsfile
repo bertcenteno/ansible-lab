@@ -118,6 +118,14 @@ Proceed with Ansible deployment?
 """,
     ok: 'Deploy Now'
 )
+            } catch (err) {
+
+                currentBuild.result = 'ABORTED'
+
+                error("Deployment aborted by user")
+
+            }
+
         }
 
     }
@@ -333,6 +341,79 @@ EOF
 EOF
         '''
     }
+
+aborted {
+
+    script {
+
+        sh '''
+        curl -s \
+        -H "Content-Type: application/json" \
+        -d @- "$TEAMS_WEBHOOK" <<EOF || true
+{
+  "type": "message",
+  "attachments": [
+    {
+      "contentType": "application/vnd.microsoft.card.adaptive",
+      "content": {
+        "\$schema": "http://adaptivecards.io/schemas/adaptive-card.json",
+        "type": "AdaptiveCard",
+        "version": "1.4",
+        "body": [
+          {
+            "type": "TextBlock",
+            "size": "Large",
+            "weight": "Bolder",
+            "text": "⏹️ Jenkins Deployment Aborted"
+          },
+          {
+            "type": "FactSet",
+            "facts": [
+              {
+                "title": "Job",
+                "value": "${JOB_NAME}"
+              },
+              {
+                "title": "Build",
+                "value": "#${BUILD_NUMBER}"
+              },
+              {
+                "title": "Status",
+                "value": "ABORTED"
+              },
+              {
+                "title": "Repository",
+                "value": "${GIT_REPOSITORY}"
+              },
+              {
+                "title": "Branch",
+                "value": "${GIT_BRANCH_NAME}"
+              },
+              {
+                "title": "Commit",
+                "value": "${GIT_COMMIT_SHORT}"
+              },
+              {
+                "title": "Message",
+                "value": "${GIT_COMMIT_MESSAGE}"
+              },
+              {
+                "title": "Author",
+                "value": "${GIT_AUTHOR_NAME}"
+              }
+            ]
+          }
+        ]
+      }
+    }
+  ]
+}
+EOF
+        '''
+
+    }
+
+}
 
 }
 
