@@ -106,9 +106,6 @@ stage('Approval to Deploy') {
 
         script {
 
-        def safeApprover = env.APPROVER ?: "Unknown"
-
-        echo "Teams Approver: ${safeApprover}"
             try {
 
                 def approvalUser = input(
@@ -127,12 +124,10 @@ Proceed with Ansible deployment?
                     submitterParameter: 'APPROVER'
                 )
 	
-		echo "Approval result: ${approvalUser}"
+env.APPROVER = approvalUser['APPROVER'] ?: "Unknown"
 
-		env.APPROVER = approvalUser.toString().replaceAll('[\\[\\]{}]', '') ?: "Unknown"
+echo "Approved By: ${env.APPROVER}"
 
-                echo "Approved by: ${env.APPROVER}"
-		echo "APPROVER VALUE = ${APPROVER}"	
 
             }
             catch (err) {
@@ -225,7 +220,7 @@ post {
 },
 {
   "title": "Approved By",
-  "value": "${safeApprover}"
+  "value": "${APPROVER}"
 },
 {
   "title": "Repository",
