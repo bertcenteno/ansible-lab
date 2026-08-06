@@ -438,6 +438,10 @@ aborted {
                 "title": "Status",
                 "value": "ABORTED"
               },
+	      {
+	      "title": "Environment",
+	      "value": "${params.DEPLOY_ENV}"
+	      },
               {
                 "title": "Repository",
                 "value": "${GIT_REPOSITORY}"
@@ -457,6 +461,10 @@ aborted {
               {
                 "title": "Author",
                 "value": "${GIT_AUTHOR_NAME}"
+              },
+              {
+                "title": "Duration",
+                "value": "${BUILD_TIME}"
               }
             ]
           }
