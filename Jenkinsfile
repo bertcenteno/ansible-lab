@@ -125,7 +125,7 @@ Proceed with Ansible deployment?
                     submitterParameter: 'APPROVER'
                 )
 
-                env.APPROVER = approval['APPROVER'] ?: "Unknown"
+                env.APPROVER = approval ?: "Unknown"
 
                 echo "Approved By: ${env.APPROVER}"
 
