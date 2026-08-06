@@ -135,7 +135,7 @@ Proceed with Ansible deployment?
 
                 echo "Deployment aborted by user"
 
-                return
+                throw err
 
             }
 
