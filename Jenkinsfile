@@ -215,7 +215,7 @@ post {
 
         echo 'Deployment completed successfully'
 
-        sh '''
+        sh """
         curl -s \
         -H "Content-Type: application/json" \
         -d @- "$TEAMS_WEBHOOK" <<EOF || true
@@ -305,7 +305,7 @@ post {
   ]
 }
 EOF
-        '''
+        """
     }
 
 
