@@ -129,28 +129,22 @@ Proceed with Ansible deployment?
                 echo "Approved By: ${env.APPROVER}"
 
             }
+            catch (err) {
 
-catch (err) {
+                currentBuild.result = 'ABORTED'
 
-    currentBuild.result = 'ABORTED'
+                echo "Deployment aborted"
 
-    wrap([$class: 'BuildUser']) {
+                error("Deployment aborted by user")
 
-        env.ABORTED_BY = BUILD_USER ?: "Unknown"
-
-    }
-
-    echo "Aborted By: ${env.ABORTED_BY}"
-
-    error("Deployment aborted by user")
-
-}
+            }
 
         }
 
     }
 
 }
+
 
         stage('Run Ansible Playbook') {
             steps {
@@ -404,10 +398,6 @@ aborted {
               {
                 "title": "Status",
                 "value": "ABORTED"
-              },
-              {
-                "title": "Aborted By",
-                "value": "${ABORTED_BY}"
               },
               {
                 "title": "Repository",
