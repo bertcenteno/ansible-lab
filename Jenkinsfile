@@ -112,6 +112,17 @@ stage('Get Git Information') {
             }
         }
 
+stage('Debug Environment') {
+
+    steps {
+
+        echo "DEPLOY_ENV selected value = '${params.DEPLOY_ENV}'"
+
+    }
+
+}
+
+
 stage('Approval to Deploy') {
 
     when {
