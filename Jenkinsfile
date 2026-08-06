@@ -246,10 +246,13 @@ post {
                 "title": "Build",
                 "value": "#${BUILD_NUMBER}"
               },
-		
 		{
   "title": "Status",
   "value": "SUCCESS"
+},
+{
+  "title": "Environment",
+  "value": "${params.DEPLOY_ENV}"
 },
 {
   "title": "Environment",
@@ -349,6 +352,10 @@ EOF
 {
   "title": "Status",
   "value": "FAILED"
+},
+{
+  "title": "Environment",
+  "value": "${params.DEPLOY_ENV}"
 },
 {
   "title": "Repository",
