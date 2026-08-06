@@ -119,7 +119,7 @@ Build: #${BUILD_NUMBER}
 Proceed with Ansible deployment?
 """,
     ok: 'Deploy Now'
-	submitterParameter: 'APPROVER'
+    submitterParameter: 'APPROVER'
 )
 
 env.APPROVER = approval ['APPROVER']
