@@ -123,13 +123,13 @@ Proceed with Ansible deployment?
                     ok: 'Deploy Now',
                     submitterParameter: 'APPROVER'
                 )
-		echo "APPROVER VALUE = ${APPROVER}"	
 	
 		echo "Approval result: ${approvalUser}"
 
                 env.APPROVER = approvalUser ?: "Unknown"
 
                 echo "Approved by: ${env.APPROVER}"
+		echo "APPROVER VALUE = ${APPROVER}"	
 
             }
             catch (err) {
