@@ -248,7 +248,7 @@ post {
               },
               {
                 "title": "Environment",
-                "value": "#${params.DEPLOY_ENV}"
+                "value": "${params.DEPLOY_ENV}"
               },
 		{
   "title": "Status",
