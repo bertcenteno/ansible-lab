@@ -99,6 +99,11 @@ stage('Get Git Information') {
             }
         }
 
+stage('Approval to Deploy') {
+
+    steps {
+
+        script {
 
 input(
     message: """
@@ -115,6 +120,11 @@ Proceed with Ansible deployment?
 """,
     ok: 'Deploy Now'
 )
+        }
+
+    }
+
+}
 
         stage('Run Ansible Playbook') {
             steps {
