@@ -68,44 +68,47 @@ stage('Get Git Information') {
     }
 }
 
-
 stage('Validate Ansible Syntax') {
 
     steps {
 
-        sshagent(['ansible-controller-key']) {
+        script {
 
-            sh '''
-            echo "$VAULT_PASSWORD" > vault_pass.tmp
-            chmod 600 vault_pass.tmp
+            def inventoryPath = params.DEPLOY_ENV.toLowerCase()
 
-            scp vault_pass.tmp ${ANSIBLE_CONTROLLER}:${ANSIBLE_DIR}/.vault_pass
+            sshagent(['ansible-controller-key']) {
 
+                sh """
+                echo "\$VAULT_PASSWORD" > vault_pass.tmp
+                chmod 600 vault_pass.tmp
 
-            ssh ${ANSIBLE_CONTROLLER} "
-                cd ${ANSIBLE_DIR} &&
-                ansible-playbook \
-                -i inventories/${DEPLOY_ENV.toLowerCase()}/hosts \
-                --syntax-check \
-                site.yml
-            "
+                scp vault_pass.tmp ${ANSIBLE_CONTROLLER}:${ANSIBLE_DIR}/.vault_pass
 
 
-            ssh ${ANSIBLE_CONTROLLER} "
-                rm -f ${ANSIBLE_DIR}/.vault_pass
-            "
+                ssh ${ANSIBLE_CONTROLLER} "
+                    cd ${ANSIBLE_DIR} &&
+                    ansible-playbook \
+                    -i inventories/${inventoryPath}/hosts \
+                    --syntax-check \
+                    site.yml
+                "
 
 
-            rm -f vault_pass.tmp
+                ssh ${ANSIBLE_CONTROLLER} "
+                    rm -f ${ANSIBLE_DIR}/.vault_pass
+                "
 
-            '''
+
+                rm -f vault_pass.tmp
+                """
+
+            }
 
         }
 
     }
 
 }
-
 
         stage('Sync Repository to Ansible Controller') {
             steps {
