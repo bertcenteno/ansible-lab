@@ -303,7 +303,6 @@ success {
 }
 """
 
-	echo payload
         sh """
         curl -s \
         -H "Content-Type: application/json" \
