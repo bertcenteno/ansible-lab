@@ -108,7 +108,7 @@ stage('Approval to Deploy') {
 
             try {
 
-                def approval = input(
+                def approvalUser = input(
                     message: """
 Deployment Request |
 Repository: ${GIT_REPOSITORY} |
@@ -123,8 +123,10 @@ Proceed with Ansible deployment?
                     ok: 'Deploy Now',
                     submitterParameter: 'APPROVER'
                 )
+		
+		echo "Approval result: ${approvalUser}"
 
-                env.APPROVER = approval['APPROVER']
+                env.APPROVER = approvalUser ?: "Unknown"
 
                 echo "Approved by: ${env.APPROVER}"
 
