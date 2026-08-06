@@ -99,37 +99,24 @@ stage('Get Git Information') {
             }
         }
 
-
 stage('Approval to Deploy') {
 
     steps {
 
         script {
 
-            def approvalMessage = """
-Deployment Request
-
-Repository:
-${GIT_REPOSITORY}
-
-Branch:
-${GIT_BRANCH_NAME}
-
-Commit:
-${GIT_COMMIT_SHORT}
-
-Message:
-${GIT_COMMIT_MESSAGE}
-
-Author:
-${GIT_AUTHOR_NAME}
-
-
-Proceed with Ansible deployment?
+            def approvalDetails = """
+Repository: ${GIT_REPOSITORY}
+Branch: ${GIT_BRANCH_NAME}
+Commit: ${GIT_COMMIT_SHORT}
+Message: ${GIT_COMMIT_MESSAGE}
+Author: ${GIT_AUTHOR_NAME}
+Build: #${BUILD_NUMBER}
 """
 
             input(
-                message: approvalMessage,
+                message: 'Proceed with Ansible deployment?',
+                description: approvalDetails,
                 ok: 'Deploy Now'
             )
 
