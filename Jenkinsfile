@@ -106,7 +106,7 @@ stage('Approval to Deploy') {
         script {
 try {
 
-input(
+def approvalUser = input(
     message: """
 Deployment Request |
 Repository: ${GIT_REPOSITORY} |
@@ -120,6 +120,8 @@ Proceed with Ansible deployment?
 """,
     ok: 'Deploy Now'
 )
+
+env.APPROVER = approvalUser
 
 }
              catch (err) {
@@ -209,6 +211,10 @@ post {
   "title": "Status",
   "value": "SUCCESS"
 },
+{
+  "title": "Approved By",
+  "value": "${APPROVER}"
+}
 {
   "title": "Repository",
   "value": "${GIT_REPOSITORY}"
