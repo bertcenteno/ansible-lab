@@ -16,9 +16,9 @@
       tags:
         - chrony
 
-    - role: docker
+    - role: docker-test
       tags:
-        - docker
+        - docker-test
 
     - role: docker_compose
       tags:
