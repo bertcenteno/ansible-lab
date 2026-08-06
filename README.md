@@ -35,35 +35,37 @@ Production-style Ansible automation and CI/CD deployment lab built on Proxmox.
 
 ## Repository Structure
 
+```text
 ansible-lab/
 │
 ├── inventories/
-│ ├── dev/
-│ │ ├── hosts
-│ │ └── group_vars/
-│ │ ├── all/
-│ │ │ └── vault.yml
-│ │ └── dockerhosts.yml
-│ │
-│ └── prod/
-│ ├── hosts
-│ └── group_vars/
-│ ├── all/
-│ │ └── vault.yml
-│ └── dockerhosts.yml
+│   ├── dev/
+│   │   ├── hosts
+│   │   └── group_vars/
+│   │       ├── all/
+│   │       │   └── vault.yml
+│   │       └── dockerhosts.yml
+│   │
+│   └── prod/
+│       ├── hosts
+│       └── group_vars/
+│           ├── all/
+│           │   └── vault.yml
+│           └── dockerhosts.yml
 │
 ├── roles/
-│ ├── common
-│ ├── users
-│ ├── chrony
-│ ├── apache
-│ ├── mariadb
-│ ├── docker
-│ └── docker_compose
+│   ├── common/
+│   ├── users/
+│   ├── chrony/
+│   ├── apache/
+│   ├── mariadb/
+│   ├── docker/
+│   └── docker_compose/
 │
 ├── site.yml
-└── Jenkinsfile
-
+├── Jenkinsfile
+└── README.md
+```
 
 ## Environment Management
 
@@ -82,57 +84,52 @@ Features:
 - No approval required
 - Uses DEV variables and secrets
 
-Deployment flow:
+## Deployment Flow
 
+### DEV Deployment
+
+```text
 Git Push
-|
-v
+    |
+    v
 Jenkins Pipeline
-|
-v
+    |
+    v
 DEPLOY_ENV=DEV
-|
-v
+    |
+    v
 Ansible Syntax Validation
-|
-v
+    |
+    v
 Deploy using DEV inventory
+```
 
+No approval required.
 
 ---
 
-### PROD Environment
+### PROD Deployment
 
-Inventory:
-
-inventories/prod/hosts
-
-
-Features:
-
-- Manual approval required before deployment
-- Uses PROD variables and secrets
-- Deployment audit through Jenkins and Microsoft Teams notification
-
-Deployment flow:
-
+```text
 Git Push
-|
-v
+    |
+    v
 Jenkins Pipeline
-|
-v
+    |
+    v
 DEPLOY_ENV=PROD
-|
-v
+    |
+    v
 Ansible Syntax Validation
-|
-v
+    |
+    v
 Approval Gate
-|
-v
+    |
+    v
 Deploy using PROD inventory
+```
 
+Production deployment requires manual approval.
 
 ---
 
