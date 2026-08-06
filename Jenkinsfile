@@ -118,7 +118,7 @@ Proceed with Ansible deployment?
 """,
     ok: 'Deploy Now'
 )
-            } catch (err) {
+             catch (err) {
 
                 currentBuild.result = 'ABORTED'
 
