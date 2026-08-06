@@ -313,19 +313,14 @@ success {
 }
 
 
-    failure {
+failure {
 
-        script {
-            env.BUILD_TIME = "${currentBuild.duration / 1000} seconds"
-	    env.APPROVER_VALUE = env.APPROVER ?: "Not Required"
-        }
+    script {
 
-        echo 'Deployment failed'
+        env.BUILD_TIME = "${currentBuild.duration / 1000} seconds"
+        env.APPROVER_VALUE = env.APPROVER ?: "Not Required"
 
-        sh """
-        curl -s \
-        -H "Content-Type: application/json" \
-        -d @- "\$TEAMS_WEBHOOK" <<EOF
+        def payload = """
 {
   "type": "message",
   "attachments": [
@@ -353,49 +348,37 @@ success {
                 "title": "Build",
                 "value": "#${BUILD_NUMBER}"
               },
-
-{
-  "title": "Status",
-  "value": "FAILED"
-},
-{
-  "title": "Environment",
-  "value": ${DEPLOY_ENV_VALUE}
-},
-{
-  "title": "Repository",
-  "value": "${GIT_REPOSITORY}"
-},
-{
-  "title": "Branch",
-  "value": "${GIT_BRANCH_NAME}"
-},
-{
-  "title": "Commit",
-  "value": "${GIT_COMMIT_SHORT}"
-},
-{
-  "title": "Message",
-  "value": "${GIT_COMMIT_MESSAGE}"
-},
-{
-  "title": "Author",
-  "value": "${GIT_AUTHOR_NAME}"
-},
-{
-  "title": "Duration",
-  "value": "${BUILD_TIME}"
-}
-            
-            ]
-          },
-          {
-            "type": "ActionSet",
-            "actions": [
               {
-                "type": "Action.OpenUrl",
-                "title": "View Jenkins Build",
-                "url": "${BUILD_URL}"
+                "title": "Environment",
+                "value": "${params.DEPLOY_ENV}"
+              },
+              {
+                "title": "Status",
+                "value": "FAILED"
+              },
+              {
+                "title": "Repository",
+                "value": "${GIT_REPOSITORY}"
+              },
+              {
+                "title": "Branch",
+                "value": "${GIT_BRANCH_NAME}"
+              },
+              {
+                "title": "Commit",
+                "value": "${GIT_COMMIT_SHORT}"
+              },
+              {
+                "title": "Message",
+                "value": "${GIT_COMMIT_MESSAGE}"
+              },
+              {
+                "title": "Author",
+                "value": "${GIT_AUTHOR_NAME}"
+              },
+              {
+                "title": "Duration",
+                "value": "${BUILD_TIME}"
               }
             ]
           }
@@ -404,9 +387,17 @@ success {
     }
   ]
 }
-EOF
+"""
+
+        sh """
+        curl -s \
+        -H "Content-Type: application/json" \
+        -d '${payload}' "\$TEAMS_WEBHOOK"
         """
     }
+
+}
+
 
 aborted {
 
