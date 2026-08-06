@@ -99,7 +99,6 @@ stage('Get Git Information') {
             }
         }
 
-
 stage('Approval to Deploy') {
 
     steps {
@@ -132,7 +131,11 @@ Proceed with Ansible deployment?
             }
             catch (err) {
 
-                def abortUser = err.getCauses()[0].getUser()
+                def abortUser = "Unknown"
+
+                if (err.getCauses()) {
+                    abortUser = err.getCauses()[0].getUser()
+                }
 
                 env.ABORTED_BY = abortUser ?: "Unknown"
 
@@ -140,7 +143,7 @@ Proceed with Ansible deployment?
 
                 currentBuild.result = 'ABORTED'
 
-                error("Deployment aborted by user"
+                error("Deployment aborted by user")
 
             }
 
@@ -149,7 +152,6 @@ Proceed with Ansible deployment?
     }
 
 }
-
 
         stage('Run Ansible Playbook') {
             steps {
