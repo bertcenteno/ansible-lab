@@ -8,6 +8,19 @@ pipeline {
 
 	}
 
+parameters {
+
+    choice(
+        name: 'DEPLOY_ENV',
+        choices: [
+            'DEV',
+            'PROD'
+        ],
+        description: 'Select deployment environment'
+    )
+
+}
+
     environment {
         ANSIBLE_CONTROLLER = "ansible@172.26.8.51"
         ANSIBLE_DIR = "/home/ansible/ansible-lab"
@@ -101,6 +114,12 @@ stage('Get Git Information') {
 
 stage('Approval to Deploy') {
 
+    when {
+        expression {
+            params.DEPLOY_ENV == 'PROD'
+        }
+    }
+
     steps {
 
         script {
@@ -110,6 +129,8 @@ stage('Approval to Deploy') {
                 def approval = input(
                     message: """
 Deployment Request |
+
+Environment: ${params.DEPLOY_ENV}
 
 Repository: ${GIT_REPOSITORY}
 Branch: ${GIT_BRANCH_NAME}
@@ -218,6 +239,10 @@ post {
 		{
   "title": "Status",
   "value": "SUCCESS"
+},
+{
+  "title": "Environment",
+  "value": "${DEPLOY_ENV}"
 },
 {
   "title": "Approved By",
