@@ -218,6 +218,7 @@ success {
     script {
 
         env.BUILD_TIME = "${currentBuild.duration / 1000} seconds"
+	env.APPROVER_VALUE = env.APPROVER ?: "Not Required"
 
         def payload = """
 {
@@ -257,7 +258,7 @@ success {
               },
               {
                 "title": "Approved By",
-                "value": "${APPROVER ?: 'Not Required'}"
+                "value": "${APPROVER_VALUE}"
               },
               {
                 "title": "Repository",
@@ -302,6 +303,7 @@ success {
 }
 """
 
+	echo payload
         sh """
         curl -s \
         -H "Content-Type: application/json" \
@@ -316,6 +318,7 @@ success {
 
         script {
             env.BUILD_TIME = "${currentBuild.duration / 1000} seconds"
+	    env.APPROVER_VALUE = env.APPROVER ?: "Not Required"
         }
 
         echo 'Deployment failed'
