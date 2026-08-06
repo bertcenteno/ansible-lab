@@ -23,3 +23,7 @@
     - role: docker_compose
       tags:
         - docker_compose
+
+- name: Force deployment failure
+  fail:
+    msg: "Testing PROD failure notification"          
