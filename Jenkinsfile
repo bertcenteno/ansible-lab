@@ -132,9 +132,15 @@ Proceed with Ansible deployment?
             }
             catch (err) {
 
+                def abortUser = err.getCauses()[0].getUser()
+
+                env.ABORTED_BY = abortUser ?: "Unknown"
+
+                echo "Aborted By: ${env.ABORTED_BY}"
+
                 currentBuild.result = 'ABORTED'
 
-                error("Deployment aborted by user")
+                error("Deployment aborted by user"
 
             }
 
