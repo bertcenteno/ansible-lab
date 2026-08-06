@@ -403,6 +403,8 @@ aborted {
 
     script {
 
+	env.BUILD_TIME = "${currentBuild.duration / 1000} seconds"
+
         sh """
         curl -s \
         -H "Content-Type: application/json" \
