@@ -116,12 +116,17 @@ stage('Debug Environment') {
 
     steps {
 
-        echo "DEPLOY_ENV selected value = '${params.DEPLOY_ENV}'"
+        script {
+
+            env.DEPLOY_ENV_VALUE = params.DEPLOY_ENV
+
+            echo "DEPLOY_ENV selected value = '${env.DEPLOY_ENV_VALUE}'"
+
+        }
 
     }
 
 }
-
 
 stage('Approval to Deploy') {
 
@@ -141,7 +146,7 @@ stage('Approval to Deploy') {
                     message: """
 Deployment Request |
 
-Environment: ${params.DEPLOY_ENV}
+Environment:${DEPLOY_ENV_VALUE}
 
 Repository: ${GIT_REPOSITORY}
 Branch: ${GIT_BRANCH_NAME}
@@ -248,7 +253,7 @@ post {
   },
   {
     "title": "Environment",
-    "value": "${params.DEPLOY_ENV}"
+    "value": ${DEPLOY_ENV_VALUE}
   },
   {
     "title": "Status",
@@ -256,7 +261,7 @@ post {
   },
   {
     "title": "Approved By",
-    "value": "${APPROVER}"
+    "value": "${APPROVER ?: 'Not Required'}"
   },
   {
     "title": "Repository",
@@ -351,7 +356,7 @@ EOF
 },
 {
   "title": "Environment",
-  "value": "${params.DEPLOY_ENV}"
+  "value": ${DEPLOY_ENV_VALUE}
 },
 {
   "title": "Repository",
