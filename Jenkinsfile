@@ -116,7 +116,7 @@ stage('Approval to Deploy') {
 
     when {
         expression {
-            params.DEPLOY_ENV == 'DEV'
+            params.DEPLOY_ENV == 'PROD'
         }
     }
 
