@@ -129,13 +129,13 @@ Proceed with Ansible deployment?
                 echo "Approved By: ${env.APPROVER}"
 
             }
-            catch (err) {
+            catch (org.jenkinsci.plugins.workflow.steps.FlowInterruptedException err) {
 
                 currentBuild.result = 'ABORTED'
 
-                echo "Deployment aborted"
+                echo "Deployment aborted by user"
 
-                error("Deployment aborted by user")
+                return
 
             }
 
