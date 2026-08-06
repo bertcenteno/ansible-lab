@@ -23,8 +23,4 @@
     - role: docker_compose
       tags:
         - docker_compose
-  tasks:
 
-    - name: Force deployment failure test
-      ansible.builtin.fail:
-        msg: "Testing PROD failure notification"
