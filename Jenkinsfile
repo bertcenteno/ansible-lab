@@ -104,23 +104,20 @@ stage('Approval to Deploy') {
     steps {
 
         script {
-
 input(
     message: """
-<b>Deployment Request</b><br><br>
-
-<b>Repository:</b> ${GIT_REPOSITORY}<br>
-<b>Branch:</b> ${GIT_BRANCH_NAME}<br>
-<b>Commit:</b> ${GIT_COMMIT_SHORT}<br>
-<b>Message:</b> ${GIT_COMMIT_MESSAGE}<br>
-<b>Author:</b> ${GIT_AUTHOR_NAME}<br>
-<b>Build:</b> #${BUILD_NUMBER}<br><br>
+Deployment Request |
+Repository: ${GIT_REPOSITORY} |
+Branch: ${GIT_BRANCH_NAME} |
+Commit: ${GIT_COMMIT_SHORT} |
+Message: ${GIT_COMMIT_MESSAGE} |
+Author: ${GIT_AUTHOR_NAME} |
+Build: #${BUILD_NUMBER}
 
 Proceed with Ansible deployment?
 """,
     ok: 'Deploy Now'
 )
-
         }
 
     }
