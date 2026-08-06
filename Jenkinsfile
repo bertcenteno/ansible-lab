@@ -104,6 +104,8 @@ stage('Approval to Deploy') {
     steps {
 
         script {
+try {
+
 input(
     message: """
 Deployment Request |
@@ -118,6 +120,8 @@ Proceed with Ansible deployment?
 """,
     ok: 'Deploy Now'
 )
+
+}
              catch (err) {
 
                 currentBuild.result = 'ABORTED'
