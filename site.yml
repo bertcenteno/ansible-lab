@@ -23,7 +23,8 @@
     - role: docker_compose
       tags:
         - docker_compose
+  tasks:
 
-- name: Test PROD failure notification
-  ansible.builtin.fail:
-    msg: "Testing Jenkins PROD failure notification"          
+    - name: Force deployment failure test
+      ansible.builtin.fail:
+        msg: "Testing PROD failure notification"
