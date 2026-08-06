@@ -226,7 +226,7 @@ post {
 {
   "title": "Approved By",
   "value": "${safeApprover}"
-}
+},
 {
   "title": "Repository",
   "value": "${GIT_REPOSITORY}"
