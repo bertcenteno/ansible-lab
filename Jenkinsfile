@@ -129,19 +129,14 @@ Proceed with Ansible deployment?
                 echo "Approved By: ${env.APPROVER}"
 
             }
-            catch (err) {
 
-                def abortUser = "Unknown"
-
-                if (err.getCauses()) {
-                    abortUser = err.getCauses()[0].getUser()
-                }
-
-                env.ABORTED_BY = abortUser ?: "Unknown"
-
-                echo "Aborted By: ${env.ABORTED_BY}"
+            catch (org.jenkinsci.plugins.workflow.steps.FlowInterruptedException e) {
 
                 currentBuild.result = 'ABORTED'
+
+                env.ABORTED_BY = "User aborted deployment"
+
+                echo "Deployment aborted"
 
                 error("Deployment aborted by user")
 
