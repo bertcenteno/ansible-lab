@@ -313,10 +313,10 @@ EOF
 
         echo 'Deployment failed'
 
-        sh '''
+        sh """
         curl -s \
         -H "Content-Type: application/json" \
-        -d @- "$TEAMS_WEBHOOK" <<EOF || true
+        -d @- "\$TEAMS_WEBHOOK" <<EOF || true
 {
   "type": "message",
   "attachments": [
@@ -396,17 +396,17 @@ EOF
   ]
 }
 EOF
-        '''
+        """
     }
 
 aborted {
 
     script {
 
-        sh '''
+        sh """
         curl -s \
         -H "Content-Type: application/json" \
-        -d @- "$TEAMS_WEBHOOK" <<EOF || true
+        -d @- "\$TEAMS_WEBHOOK" <<EOF || true
 {
   "type": "message",
   "attachments": [
@@ -466,7 +466,7 @@ aborted {
   ]
 }
 EOF
-        '''
+        """
 
     }
 
