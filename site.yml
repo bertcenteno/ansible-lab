@@ -24,6 +24,6 @@
       tags:
         - docker_compose
 
-- name: Force deployment failure
-  fail:
-    msg: "Testing PROD failure notification"          
+- name: Test PROD failure notification
+  ansible.builtin.fail:
+    msg: "Testing Jenkins PROD failure notification"          
