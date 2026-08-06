@@ -218,7 +218,7 @@ post {
         sh """
         curl -s \
         -H "Content-Type: application/json" \
-        -d @- "\$TEAMS_WEBHOOK" <<EOF || true
+        -d @- "\$TEAMS_WEBHOOK" <<EOF
 {
   "type": "message",
   "attachments": [
@@ -316,7 +316,7 @@ EOF
         sh """
         curl -s \
         -H "Content-Type: application/json" \
-        -d @- "\$TEAMS_WEBHOOK" <<EOF || true
+        -d @- "\$TEAMS_WEBHOOK" <<EOF
 {
   "type": "message",
   "attachments": [
@@ -406,7 +406,7 @@ aborted {
         sh """
         curl -s \
         -H "Content-Type: application/json" \
-        -d @- "\$TEAMS_WEBHOOK" <<EOF || true
+        -d @- "\$TEAMS_WEBHOOK" <<EOF
 {
   "type": "message",
   "attachments": [
