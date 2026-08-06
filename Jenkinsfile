@@ -130,17 +130,21 @@ Proceed with Ansible deployment?
 
             }
 
-            catch (org.jenkinsci.plugins.workflow.steps.FlowInterruptedException e) {
+catch (err) {
 
-                currentBuild.result = 'ABORTED'
+    currentBuild.result = 'ABORTED'
 
-                env.ABORTED_BY = "User aborted deployment"
+    wrap([$class: 'BuildUser']) {
 
-                echo "Deployment aborted"
+        env.ABORTED_BY = BUILD_USER ?: "Unknown"
 
-                error("Deployment aborted by user")
+    }
 
-            }
+    echo "Aborted By: ${env.ABORTED_BY}"
+
+    error("Deployment aborted by user")
+
+}
 
         }
 
@@ -400,6 +404,10 @@ aborted {
               {
                 "title": "Status",
                 "value": "ABORTED"
+              },
+              {
+                "title": "Aborted By",
+                "value": "${ABORTED_BY}"
               },
               {
                 "title": "Repository",
