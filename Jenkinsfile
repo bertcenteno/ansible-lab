@@ -212,20 +212,14 @@ Proceed with Ansible deployment?
 
 post {
 
-    success {
 
-        script {
-            env.BUILD_TIME = "${currentBuild.duration / 1000} seconds"
-	    env.DEPLOY_ENV_VALUE = params.DEPLOY_ENV ?: "UNKNOWN"
-        }
+success {
 
-        echo 'Deployment completed successfully'
+    script {
 
-        sh """
-	echo "Environment value = '${DEPLOY_ENV_VALUE}'"
-        curl -s \
-        -H "Content-Type: application/json" \
-        -d @- "\$TEAMS_WEBHOOK" <<EOF
+        env.BUILD_TIME = "${currentBuild.duration / 1000} seconds"
+
+        def payload = """
 {
   "type": "message",
   "attachments": [
@@ -244,52 +238,51 @@ post {
           },
           {
             "type": "FactSet",
-"facts": [
-  {
-    "title": "Job",
-    "value": "${JOB_NAME}"
-  },
-  {
-    "title": "Build",
-    "value": "#${BUILD_NUMBER}"
-  },
-  {
-    "title": "Environment",
-    "value": ${DEPLOY_ENV_VALUE}
-  },
-  {
-    "title": "Status",
-    "value": "SUCCESS"
-  },
-  {
-    "title": "Approved By",
-    "value": "${APPROVER ?: 'Not Required'}"
-  },
-  {
-    "title": "Repository",
-    "value": "${GIT_REPOSITORY}"
-  },
-  {
-    "title": "Branch",
-    "value": "${GIT_BRANCH_NAME}"
-  },
-  {
-    "title": "Commit",
-    "value": "${GIT_COMMIT_SHORT}"
-  },
-  {
-    "title": "Message",
-    "value": "${GIT_COMMIT_MESSAGE}"
-  },
-  {
-    "title": "Author",
-    "value": "${GIT_AUTHOR_NAME}"
-  },
-  {
-    "title": "Duration",
-    "value": "${BUILD_TIME}"
-  }
-
+            "facts": [
+              {
+                "title": "Job",
+                "value": "${JOB_NAME}"
+              },
+              {
+                "title": "Build",
+                "value": "#${BUILD_NUMBER}"
+              },
+              {
+                "title": "Environment",
+                "value": "${params.DEPLOY_ENV}"
+              },
+              {
+                "title": "Status",
+                "value": "SUCCESS"
+              },
+              {
+                "title": "Approved By",
+                "value": "${APPROVER ?: 'Not Required'}"
+              },
+              {
+                "title": "Repository",
+                "value": "${GIT_REPOSITORY}"
+              },
+              {
+                "title": "Branch",
+                "value": "${GIT_BRANCH_NAME}"
+              },
+              {
+                "title": "Commit",
+                "value": "${GIT_COMMIT_SHORT}"
+              },
+              {
+                "title": "Message",
+                "value": "${GIT_COMMIT_MESSAGE}"
+              },
+              {
+                "title": "Author",
+                "value": "${GIT_AUTHOR_NAME}"
+              },
+              {
+                "title": "Duration",
+                "value": "${BUILD_TIME}"
+              }
             ]
           },
           {
@@ -307,9 +300,16 @@ post {
     }
   ]
 }
-EOF
+"""
+
+        sh """
+        curl -s \
+        -H "Content-Type: application/json" \
+        -d '${payload}' "\$TEAMS_WEBHOOK"
         """
     }
+
+}
 
 
     failure {
