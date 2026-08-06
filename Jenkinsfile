@@ -118,11 +118,12 @@ Build: #${BUILD_NUMBER}
 
 Proceed with Ansible deployment?
 """,
-    ok: 'Deploy Now'
+    ok: 'Deploy Now',
     submitterParameter: 'APPROVER'
 )
 
 env.APPROVER = approval ['APPROVER']
+echo "Approved by: ${env.APPROVER}"
 
 }
              catch (err) {
