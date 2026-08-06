@@ -1,0 +1,4 @@
+environment: PROD
+
+mariadb_database: prod_database
+mariadb_user: prod_user

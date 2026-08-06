@@ -69,18 +69,42 @@ stage('Get Git Information') {
 }
 
 
-        stage('Validate Ansible Syntax') {
-            steps {
-                sh '''
-                echo "$VAULT_PASSWORD" > .vault_pass
-                chmod 600 .vault_pass
+stage('Validate Ansible Syntax') {
 
-                ansible-playbook site.yml --syntax-check
+    steps {
 
-                rm -f .vault_pass
-                '''
-            }
+        sshagent(['ansible-controller-key']) {
+
+            sh '''
+            echo "$VAULT_PASSWORD" > vault_pass.tmp
+            chmod 600 vault_pass.tmp
+
+            scp vault_pass.tmp ${ANSIBLE_CONTROLLER}:${ANSIBLE_DIR}/.vault_pass
+
+
+            ssh ${ANSIBLE_CONTROLLER} "
+                cd ${ANSIBLE_DIR} &&
+                ansible-playbook \
+                -i inventories/${DEPLOY_ENV.toLowerCase()}/hosts \
+                --syntax-check \
+                site.yml
+            "
+
+
+            ssh ${ANSIBLE_CONTROLLER} "
+                rm -f ${ANSIBLE_DIR}/.vault_pass
+            "
+
+
+            rm -f vault_pass.tmp
+
+            '''
+
         }
+
+    }
+
+}
 
 
         stage('Sync Repository to Ansible Controller') {
@@ -183,30 +207,47 @@ Proceed with Ansible deployment?
 }
 
 
-        stage('Run Ansible Playbook') {
-            steps {
-                sshagent(['ansible-controller-key']) {
-                    sh '''
-		    echo "$VAULT_PASSWORD" > vault_pass.tmp
-	            chmod 600 vault_pass.tmp
+stage('Run Ansible Playbook') {
 
-            		scp vault_pass.tmp ${ANSIBLE_CONTROLLER}:${ANSIBLE_DIR}/.vault_pass
+    steps {
 
-            		ssh ${ANSIBLE_CONTROLLER} "
-            		cd ${ANSIBLE_DIR} &&
-        	    ansible-playbook site.yml
-	            "
+        script {
 
-       		     ssh ${ANSIBLE_CONTROLLER} "
-       	   	  	rm -f ${ANSIBLE_DIR}/.vault_pass
-   	        	 "
+            def inventoryPath = params.DEPLOY_ENV.toLowerCase()
 
-	            rm -f vault_pass.tmp
+            sshagent(['ansible-controller-key']) {
 
-                    '''
-                }
+                sh """
+                echo "\$VAULT_PASSWORD" > vault_pass.tmp
+                chmod 600 vault_pass.tmp
+
+                scp vault_pass.tmp ${ANSIBLE_CONTROLLER}:${ANSIBLE_DIR}/.vault_pass
+
+
+                ssh ${ANSIBLE_CONTROLLER} "
+                    cd ${ANSIBLE_DIR} &&
+                    ansible-playbook \
+		    -i inventories/${DEPLOY_ENV.toLowerCase()}/hosts \
+                    site.yml
+                "
+
+
+                ssh ${ANSIBLE_CONTROLLER} "
+                    rm -f ${ANSIBLE_DIR}/.vault_pass
+                "
+
+
+                rm -f vault_pass.tmp
+
+                """
+
             }
+
         }
+
+    }
+
+}
 
     }
 

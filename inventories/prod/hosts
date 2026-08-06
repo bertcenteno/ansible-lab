@@ -1,0 +1,11 @@
+all:
+  vars:
+    ansible_user: infra
+    ansible_python_interpreter: /usr/bin/python3
+
+  children:
+
+    dockerhosts:
+      hosts:
+        docker01:
+          ansible_host: 172.26.8.63

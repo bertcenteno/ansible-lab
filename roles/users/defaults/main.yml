@@ -1,2 +1,9 @@
 ---
-# defaults file for users
+managed_users:
+  - username: devops
+    fullname: DevOps User
+    shell: /bin/bash
+
+  - username: ansible
+    fullname: Ansible User
+    shell: /bin/bash
