@@ -218,7 +218,7 @@ post {
         sh """
         curl -s \
         -H "Content-Type: application/json" \
-        -d @- "$TEAMS_WEBHOOK" <<EOF || true
+        -d @- "\$TEAMS_WEBHOOK" <<EOF || true
 {
   "type": "message",
   "attachments": [
@@ -245,6 +245,10 @@ post {
               {
                 "title": "Build",
                 "value": "#${BUILD_NUMBER}"
+              },
+              {
+                "title": "Environement",
+                "value": "#${params.DEPLOY_ENV}"
               },
 		{
   "title": "Status",
