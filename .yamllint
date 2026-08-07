@@ -6,6 +6,7 @@ ignore: |
   .venv/
   .git/
   roles/**/.travis.yml
+  inventories/**/vault.yml
 
 rules:
   line-length:
