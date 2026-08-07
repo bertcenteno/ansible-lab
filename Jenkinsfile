@@ -55,6 +55,50 @@ stage('Get Git Information') {
     }
 }
 
+stage('Install CI Dependencies') {
+
+    steps {
+
+        sh '''
+        python3 -m venv .ci-venv
+
+        . .ci-venv/bin/activate
+
+        pip install --upgrade pip
+        pip install -r ci-requirements.txt
+        '''
+
+    }
+
+}
+
+stage('YAML Lint') {
+
+    steps {
+
+        sh '''
+        . .ci-venv/bin/activate
+
+        yamllint .
+        '''
+
+    }
+
+}
+
+stage('Ansible Lint') {
+
+    steps {
+
+        sh '''
+        . .ci-venv/bin/activate
+
+        ansible-lint
+        '''
+
+    }
+
+}
 
 stage('Detect Environment') {
 

@@ -5,3 +5,5 @@
 *.key
 inventory.local.yml
 __pycache__/
+.ci-venv/
+.venv/
