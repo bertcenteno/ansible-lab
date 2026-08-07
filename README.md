@@ -26,6 +26,7 @@ Production-style Ansible automation and CI/CD deployment lab built on Proxmox.
 - Jinja2 templates and configuration management
 - Ansible handlers for service management
 - Git-based feature branching workflow
+- Pull Request validation workflow
 - Ansible Vault for secrets management
 - Docker installation automation
 - Docker container deployment using Ansible
@@ -35,10 +36,15 @@ Production-style Ansible automation and CI/CD deployment lab built on Proxmox.
 - Branch-based environment detection
 - Automated DEV deployment workflow
 - Production deployment approval gate
-- CI/CD pipeline with Ansible syntax validation
+- CI/CD pipeline with YAML lint validation
+- CI/CD pipeline with Ansible lint validation
+- Ansible syntax validation before deployment
+- Automated Ansible dependency installation
 - Automated deployment notifications via Microsoft Teams
 
-## Repository Structure
+---
+
+# Repository Structure
 
 ```text
 ansible-lab/
@@ -67,35 +73,55 @@ ansible-lab/
 │   ├── docker/
 │   └── docker_compose/
 │
+├── requirements.yml
 ├── site.yml
 ├── Jenkinsfile
 └── README.md
-```
-
-## Environment Management
+Environment Management
 
 Separate inventories are maintained for DEV and PROD environments.
 
-### DEV Environment
+DEV Environment
 
 Inventory:
 
-
 inventories/dev/hosts
 
-
 Features:
-- Automatic deployment
-- No approval required
-- Uses DEV variables and secrets
 
-## Deployment Flow
+Automatic deployment
+No approval required
+Uses DEV variables and secrets
+Deployment Flow
 
 Deployment is controlled by Git branches using Jenkins Multibranch Pipeline.
 
-### DEV Deployment
+Before deployment, all changes pass through automated CI validation.
 
-```text
+CI Validation Pipeline
+Git Push
+    |
+    v
+Jenkins Multibranch Pipeline
+    |
+    v
+Get Git Information
+    |
+    v
+Detect Environment
+    |
+    v
+Install CI Dependencies
+    |
+    v
+YAML Lint Validation
+    |
+    v
+Ansible Lint Validation
+    |
+    v
+Ansible Syntax Validation
+DEV Deployment
 Push to develop branch
         |
         v
@@ -109,19 +135,78 @@ Environment: DEV
 
         |
         v
-Ansible Syntax Validation
+CI Validation
+        |
+        v
+Sync Repository to Ansible Controller
+        |
+        v
+Install Ansible Dependencies
         |
         v
 Deploy using DEV inventory
-```
 
 No approval required for DEV deployment.
 
----
+PROD Deployment
+Push to main branch
+        |
+        v
+Jenkins Multibranch Pipeline
+        |
+        v
+Detect Environment
 
-## Branching Strategy
+Branch: main
+Environment: PROD
 
-```text
+        |
+        v
+CI Validation
+        |
+        v
+Sync Repository to Ansible Controller
+        |
+        v
+Install Ansible Dependencies
+        |
+        v
+Approval Gate
+        |
+        v
+Deploy using PROD inventory
+
+Production deployment requires manual approval before execution.
+
+Pull Request Workflow
+
+Feature branches are validated before merging into develop.
+
+feature/*
+     |
+     |
+     v
+Pull Request
+     |
+     |
+     v
+Jenkins PR Validation
+     |
+     |
+     +----------------+
+     |
+     v
+YAML Lint
+     |
+     v
+Ansible Lint
+     |
+     v
+Ansible Syntax Validation
+     |
+     v
+Merge to develop
+Branching Strategy
 feature/*
     |
     | Pull Request
@@ -137,55 +222,24 @@ main
     | Approval Gate
     v
 PROD Deployment
-```
-
-### PROD Deployment
-
-```text
-Push to main branch
-        |
-        v
-Jenkins Multibranch Pipeline
-        |
-        v
-Detect Environment
-
-Branch: main
-Environment: PROD
-
-        |
-        v
-Ansible Syntax Validation
-        |
-        v
-Approval Gate
-        |
-        v
-Deploy using PROD inventory
-```
-
-Production deployment requires manual approval before execution.
-
----
-
-## Jenkins Pipeline Features
+Jenkins Pipeline Features
 
 The Jenkins pipeline provides:
 
-- GitHub SCM integration
-- Parameterized deployment environment selection
-- DEV / PROD inventory selection
-- Ansible syntax validation
-- Remote Ansible execution
-- Ansible Vault password injection
-- Production approval gate
-- Microsoft Teams deployment notifications
-
-## Deployment Commands
-
-### DEV Deployment
-
-```bash
+GitHub SCM integration
+Jenkins Multibranch Pipeline
+Branch-based environment detection
+Pull Request validation
+YAML lint validation
+Ansible lint validation
+Ansible syntax validation
+Remote Ansible execution
+Ansible Vault password injection
+Automated Ansible dependency installation
+Production approval gate
+Microsoft Teams deployment notifications
+Deployment Commands
+DEV Deployment
 ansible-playbook \
 -i inventories/dev/hosts \
 --vault-password-file .vault_pass \
@@ -201,22 +255,22 @@ CI/CD Deployment Flow
                     v
                 Jenkins
                     |
-          +---------+---------+
-          |                   |
-         DEV                 PROD
-          |                   |
- inventories/dev       inventories/prod
-          |                   |
-          +---------+---------+
+        +-----------+-----------+
+        |                       |
+       DEV                     PROD
+        |                       |
+ inventories/dev        inventories/prod
+        |                       |
+        +-----------+-----------+
                     |
                     v
           Ansible Control Node
                     |
                     v
-              Managed Servers
+             Managed Servers
 Security
 Secrets are managed using Ansible Vault
 Vault passwords are injected securely during Jenkins execution
 Production deployments require manual approval
-Deployment activities are logged through Jenkins and Teams notifications
-
+Deployment activities are logged through Jenkins
+Deployment status notifications are sent through Microsoft Teams
