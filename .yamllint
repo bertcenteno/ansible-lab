@@ -2,6 +2,7 @@
 extends: default
 
 ignore: |
+  .ci-venv/
   .venv/
   .git/
   roles/**/.travis.yml
