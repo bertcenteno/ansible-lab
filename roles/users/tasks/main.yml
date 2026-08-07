@@ -6,4 +6,4 @@
     shell: "{{ item.shell }}"
     create_home: true
     state: present
-  loop: "{{ managed_users }}"
+  loop: "{{ users_managed_users }}"
