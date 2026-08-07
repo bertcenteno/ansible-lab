@@ -22,16 +22,21 @@ Production-style Ansible automation and CI/CD deployment lab built on Proxmox.
 ## Features
 
 - Cross-platform support (Debian / RedHat based systems)
-- Idempotent playbooks
-- Jinja2 templates
-- Handlers
-- Git feature branching
+- Idempotent Ansible playbooks
+- Jinja2 templates and configuration management
+- Ansible handlers for service management
+- Git-based feature branching workflow
 - Ansible Vault for secrets management
 - Docker installation automation
-- Docker container deployment
+- Docker container deployment using Ansible
 - Environment-based inventory management
 - DEV and PROD environment separation
-- Jenkins automated deployment pipeline
+- Jenkins Multibranch Pipeline integration
+- Branch-based environment detection
+- Automated DEV deployment workflow
+- Production deployment approval gate
+- CI/CD pipeline with Ansible syntax validation
+- Automated deployment notifications via Microsoft Teams
 
 ## Repository Structure
 
@@ -86,50 +91,60 @@ Features:
 
 ## Deployment Flow
 
+Deployment is controlled by Git branches using Jenkins Multibranch Pipeline.
+
 ### DEV Deployment
 
 ```text
-Git Push
-    |
-    v
-Jenkins Pipeline
-    |
-    v
-DEPLOY_ENV=DEV
-    |
-    v
+Push to develop branch
+        |
+        v
+Jenkins Multibranch Pipeline
+        |
+        v
+Detect Environment
+
+Branch: develop
+Environment: DEV
+
+        |
+        v
 Ansible Syntax Validation
-    |
-    v
+        |
+        v
 Deploy using DEV inventory
 ```
 
-No approval required.
+No approval required for DEV deployment.
 
 ---
 
 ### PROD Deployment
 
 ```text
-Git Push
-    |
-    v
-Jenkins Pipeline
-    |
-    v
-DEPLOY_ENV=PROD
-    |
-    v
+Push to main branch
+        |
+        v
+Jenkins Multibranch Pipeline
+        |
+        v
+Detect Environment
+
+Branch: main
+Environment: PROD
+
+        |
+        v
 Ansible Syntax Validation
-    |
-    v
+        |
+        v
 Approval Gate
-    |
-    v
+        |
+        v
 Deploy using PROD inventory
 ```
 
-Production deployment requires manual approval.
+Production deployment requires manual approval before execution.
 
 ---
 
