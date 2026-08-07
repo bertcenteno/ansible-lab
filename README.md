@@ -119,6 +119,26 @@ No approval required for DEV deployment.
 
 ---
 
+## Branching Strategy
+
+```text
+feature/*
+    |
+    | Pull Request
+    v
+develop
+    |
+    | DEV Deployment
+    |
+    | Pull Request
+    v
+main
+    |
+    | Approval Gate
+    v
+PROD Deployment
+```
+
 ### PROD Deployment
 
 ```text
