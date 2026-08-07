@@ -203,7 +203,7 @@ stage('Approval to Deploy') {
 
     when {
         expression {
-            env.DEPLOY_ENV == 'PROD'
+            return env.DEPLOY_ENV == 'PROD'
         }
     }
 
@@ -257,10 +257,10 @@ Proceed with Ansible deployment?
 stage('Run Ansible Playbook') {
 
     when {
-    expression {
-        env.PIPELINE_TYPE == "BRANCH"
-    }
-}
+    	expression {
+        	return env.PIPELINE_TYPE == "BRANCH"
+    	}
+	}
 
     steps {
 
