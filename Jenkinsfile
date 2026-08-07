@@ -80,6 +80,11 @@ stage('Detect Environment') {
                 env.DEPLOY_ENV = "PROD"
 
             }
+	    else if (env.BRANCH_NAME.startsWith('feature/')) {
+
+                env.PIPELINE_TYPE = "FEATURE"
+                env.DEPLOY_ENV = "VALIDATION"
+            }
             else {
 
                 error("Unsupported branch: ${env.BRANCH_NAME}")
