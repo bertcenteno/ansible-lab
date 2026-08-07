@@ -55,30 +55,72 @@ stage('Get Git Information') {
     }
 }
 
+
 stage('Detect Environment') {
 
     steps {
 
         script {
 
-            if (env.BRANCH_NAME == 'develop') {
+            if (env.CHANGE_ID) {
 
-                env.DEPLOY_ENV = 'DEV'
+                env.PIPELINE_TYPE = "PR"
+                env.DEPLOY_ENV = "VALIDATION"
 
-            } else if (env.BRANCH_NAME == 'main') {
+            }
+            else if (env.BRANCH_NAME == 'develop') {
 
-                env.DEPLOY_ENV = 'PROD'
+                env.PIPELINE_TYPE = "BRANCH"
+                env.DEPLOY_ENV = "DEV"
 
-            } else {
+            }
+            else if (env.BRANCH_NAME == 'main') {
+
+                env.PIPELINE_TYPE = "BRANCH"
+                env.DEPLOY_ENV = "PROD"
+
+            }
+            else {
 
                 error("Unsupported branch: ${env.BRANCH_NAME}")
 
             }
 
-            echo "Git Branch: ${env.BRANCH_NAME}"
-            echo "Deployment Environment: ${env.DEPLOY_ENV}"
+
+            echo """
+            ============================
+            Pipeline Type: ${env.PIPELINE_TYPE}
+            Branch: ${env.BRANCH_NAME}
+            Environment: ${env.DEPLOY_ENV}
+            Change ID: ${env.CHANGE_ID}
+            ============================
+            """
 
         }
+
+    }
+
+}
+
+
+stage('PR Validation') {
+
+    when {
+        expression {
+            env.CHANGE_ID != null
+        }
+    }
+
+    steps {
+
+        echo "Running Pull Request validation only"
+
+        sh '''
+        ansible-playbook \
+        -i inventories/dev/hosts \
+        --syntax-check \
+        site.yml
+        '''
 
     }
 
@@ -213,6 +255,12 @@ Proceed with Ansible deployment?
 
 
 stage('Run Ansible Playbook') {
+
+    when {
+    expression {
+        env.PIPELINE_TYPE == "BRANCH"
+    }
+}
 
     steps {
 
