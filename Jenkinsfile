@@ -155,6 +155,35 @@ stage('Debug Environment') {
 
 }
 
+stage('Detect Environment') {
+
+    steps {
+
+        script {
+
+            if (env.BRANCH_NAME == 'develop') {
+
+                env.DEPLOY_ENV = 'DEV'
+
+            } else if (env.BRANCH_NAME == 'main') {
+
+                env.DEPLOY_ENV = 'PROD'
+
+            } else {
+
+                error("Unsupported branch: ${env.BRANCH_NAME}")
+
+            }
+
+            echo "Git Branch: ${env.BRANCH_NAME}"
+            echo "Deployment Environment: ${env.DEPLOY_ENV}"
+
+        }
+
+    }
+
+}
+
 stage('Approval to Deploy') {
 
     when {
