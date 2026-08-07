@@ -8,19 +8,6 @@ pipeline {
 
 	}
 
-parameters {
-
-    choice(
-        name: 'DEPLOY_ENV',
-        choices: [
-            'DEV',
-            'PROD'
-        ],
-        description: 'Select deployment environment'
-    )
-
-}
-
     environment {
         ANSIBLE_CONTROLLER = "ansible@172.26.8.51"
         ANSIBLE_DIR = "/home/ansible/ansible-lab"
@@ -148,6 +135,40 @@ stage('Debug Environment') {
             env.DEPLOY_ENV_VALUE = params.DEPLOY_ENV
 
             echo "DEPLOY_ENV selected value = '${env.DEPLOY_ENV_VALUE}'"
+
+        }
+
+    }
+
+}
+
+
+stage('Detect Environment') {
+
+    steps {
+
+        script {
+
+            if (env.BRANCH_NAME == 'main') {
+
+                env.DEPLOY_ENV = 'PROD'
+
+            } else if (env.BRANCH_NAME == 'develop') {
+
+                env.DEPLOY_ENV = 'DEV'
+
+            } else {
+
+                error("Unsupported branch: ${env.BRANCH_NAME}")
+
+            }
+
+            echo """
+            ============================
+            Branch: ${env.BRANCH_NAME}
+            Environment: ${env.DEPLOY_ENV}
+            ============================
+            """
 
         }
 
