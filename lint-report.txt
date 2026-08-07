@@ -1,0 +1,99 @@
+[35minventories/dev/group_vars/all/vault.yml[0m[2m:1:[0m [31m[1myaml[document-start][0m: Missing document start "---"[0m
+[35minventories/dev/group_vars/dockerhosts.yml[0m[2m:1:[0m [31m[1mschema[vars][/]: $ 'environment' does not match any of the regexes: '^(?!(False|None|True|and|any_errors_fatal|as|assert|async|await|become|become_exe|become_flags|become_method|become_user|break|check_mode|class|collections|connection|continue|debugger|def|del|diff|elif|else|environment|except|fact_path|finally|for|force_handlers|from|gather_facts|gather_subset|gather_timeout|global|handlers|hosts|if|ignore_errors|ignore_unreachable|import|in|is|lambda|max_fail_percentage|module_defaults|name|no_log|nonlocal|not|or|order|pass|port|post_tasks|pre_tasks|raise|remote_user|return|roles|run_once|serial|strategy|tags|tasks|throttle|timeout|try|vars|vars_files|vars_prompt|while|with|yield)$)[a-zA-Z_][\\w]*$'. See https://docs.ansible.com/projects/ansible/latest/playbook_guide/playbooks_variables.html[0m[0m
+[35minventories/dev/group_vars/dockerhosts.yml[0m[2m:1:1:[0m [31m[1mvar-naming[no-reserved][0m: Variables names must not be Ansible reserved names. (environment) (vars: environment)[0m
+[35minventories/dev/group_vars/dockerhosts.yml[0m[2m:1:[0m [31m[1myaml[document-start][0m: Missing document start "---"[0m
+[35minventories/prod/group_vars/all/vault.yml[0m[2m:1:[0m [31m[1myaml[document-start][0m: Missing document start "---"[0m
+[35minventories/prod/group_vars/dockerhosts.yml[0m[2m:1:[0m [31m[1mschema[vars][/]: $ 'environment' does not match any of the regexes: '^(?!(False|None|True|and|any_errors_fatal|as|assert|async|await|become|become_exe|become_flags|become_method|become_user|break|check_mode|class|collections|connection|continue|debugger|def|del|diff|elif|else|environment|except|fact_path|finally|for|force_handlers|from|gather_facts|gather_subset|gather_timeout|global|handlers|hosts|if|ignore_errors|ignore_unreachable|import|in|is|lambda|max_fail_percentage|module_defaults|name|no_log|nonlocal|not|or|order|pass|port|post_tasks|pre_tasks|raise|remote_user|return|roles|run_once|serial|strategy|tags|tasks|throttle|timeout|try|vars|vars_files|vars_prompt|while|with|yield)$)[a-zA-Z_][\\w]*$'. See https://docs.ansible.com/projects/ansible/latest/playbook_guide/playbooks_variables.html[0m[0m
+[35minventories/prod/group_vars/dockerhosts.yml[0m[2m:1:1:[0m [31m[1mvar-naming[no-reserved][0m: Variables names must not be Ansible reserved names. (environment) (vars: environment)[0m
+[35minventories/prod/group_vars/dockerhosts.yml[0m[2m:1:[0m [31m[1myaml[document-start][0m: Missing document start "---"[0m
+[35mroles/apache/.travis.yml[0m[2m:12:[0m [31m[1myaml[indentation][/]: Wrong indentation: expected 6 but found 4[0m[0m
+[35mroles/apache/.travis.yml[0m[2m:29:[0m [31m[1myaml[new-line-at-end-of-file][0m: No new line character at the end of file[0m
+[35mroles/apache/defaults/main.yml[0m[2m:2:[0m [31m[1myaml[new-line-at-end-of-file][0m: No new line character at the end of file[0m
+[35mroles/apache/meta/main.yml[0m[2m:1:1:[0m [31m[1mmeta-incorrect[0m: Should change default metadata: author[0m
+[35mroles/apache/meta/main.yml[0m[2m:1:1:[0m [31m[1mmeta-incorrect[0m: Should change default metadata: company[0m
+[35mroles/apache/meta/main.yml[0m[2m:1:1:[0m [31m[1mmeta-incorrect[0m: Should change default metadata: license[0m
+[35mroles/apache/meta/main.yml[0m[2m:1:[0m [31m[1mschema[meta][/]: $.galaxy_info.min_ansible_version 2.9 is not of type 'string'. See https://docs.ansible.com/projects/ansible/latest/playbook_guide/playbooks_reuse_roles.html#using-role-dependencies[0m[0m
+[35mroles/apache/meta/main.yml[0m[2m:1:[0m [31m[1myaml[document-start][0m: Missing document start "---"[0m
+[35mroles/apache/meta/main.yml[0m[2m:43:[0m [31m[1myaml[comments-indentation][0m: Comment not indented like content[0m
+[35mroles/apache/meta/main.yml[0m[2m:53:[0m [31m[1myaml[new-line-at-end-of-file][0m: No new line character at the end of file[0m
+[35mroles/apache/meta/main.yml[0m[2m:53:[0m [31m[1myaml[trailing-spaces][0m: Trailing spaces[0m
+[35mroles/apache/vars/main.yml[0m[2m:2:[0m [31m[1myaml[new-line-at-end-of-file][0m: No new line character at the end of file[0m
+[35mroles/chrony/.travis.yml[0m[2m:12:[0m [31m[1myaml[indentation][/]: Wrong indentation: expected 6 but found 4[0m[0m
+[35mroles/chrony/.travis.yml[0m[2m:29:[0m [31m[1myaml[new-line-at-end-of-file][0m: No new line character at the end of file[0m
+[35mroles/chrony/defaults/main.yml[0m[2m:2:[0m [31m[1myaml[new-line-at-end-of-file][0m: No new line character at the end of file[0m
+[35mroles/chrony/meta/main.yml[0m[2m:1:1:[0m [31m[1mmeta-incorrect[0m: Should change default metadata: author[0m
+[35mroles/chrony/meta/main.yml[0m[2m:1:1:[0m [31m[1mmeta-incorrect[0m: Should change default metadata: company[0m
+[35mroles/chrony/meta/main.yml[0m[2m:1:1:[0m [31m[1mmeta-incorrect[0m: Should change default metadata: license[0m
+[35mroles/chrony/meta/main.yml[0m[2m:1:[0m [31m[1mschema[meta][/]: $.galaxy_info.min_ansible_version 2.9 is not of type 'string'. See https://docs.ansible.com/projects/ansible/latest/playbook_guide/playbooks_reuse_roles.html#using-role-dependencies[0m[0m
+[35mroles/chrony/meta/main.yml[0m[2m:1:[0m [31m[1myaml[document-start][0m: Missing document start "---"[0m
+[35mroles/chrony/meta/main.yml[0m[2m:43:[0m [31m[1myaml[comments-indentation][0m: Comment not indented like content[0m
+[35mroles/chrony/meta/main.yml[0m[2m:53:[0m [31m[1myaml[new-line-at-end-of-file][0m: No new line character at the end of file[0m
+[35mroles/chrony/meta/main.yml[0m[2m:53:[0m [31m[1myaml[trailing-spaces][0m: Trailing spaces[0m
+[35mroles/chrony/vars/main.yml[0m[2m:2:[0m [31m[1myaml[new-line-at-end-of-file][0m: No new line character at the end of file[0m
+[35mroles/common/.travis.yml[0m[2m:12:[0m [31m[1myaml[indentation][/]: Wrong indentation: expected 6 but found 4[0m[0m
+[35mroles/common/.travis.yml[0m[2m:29:[0m [31m[1myaml[new-line-at-end-of-file][0m: No new line character at the end of file[0m
+[35mroles/common/handlers/main.yml[0m[2m:2:[0m [31m[1myaml[new-line-at-end-of-file][0m: No new line character at the end of file[0m
+[35mroles/common/meta/main.yml[0m[2m:1:1:[0m [31m[1mmeta-incorrect[0m: Should change default metadata: author[0m
+[35mroles/common/meta/main.yml[0m[2m:1:1:[0m [31m[1mmeta-incorrect[0m: Should change default metadata: company[0m
+[35mroles/common/meta/main.yml[0m[2m:1:1:[0m [31m[1mmeta-incorrect[0m: Should change default metadata: license[0m
+[35mroles/common/meta/main.yml[0m[2m:1:[0m [31m[1mschema[meta][/]: $.galaxy_info.min_ansible_version 2.9 is not of type 'string'. See https://docs.ansible.com/projects/ansible/latest/playbook_guide/playbooks_reuse_roles.html#using-role-dependencies[0m[0m
+[35mroles/common/meta/main.yml[0m[2m:1:[0m [31m[1myaml[document-start][0m: Missing document start "---"[0m
+[35mroles/common/meta/main.yml[0m[2m:43:[0m [31m[1myaml[comments-indentation][0m: Comment not indented like content[0m
+[35mroles/common/meta/main.yml[0m[2m:53:[0m [31m[1myaml[new-line-at-end-of-file][0m: No new line character at the end of file[0m
+[35mroles/common/meta/main.yml[0m[2m:53:[0m [31m[1myaml[trailing-spaces][0m: Trailing spaces[0m
+[35mroles/common/tasks/main.yml[0m[2m:28:[0m [31m[1myaml[empty-lines][0m: Too many blank lines (1 > 0)[0m
+[35mroles/common/vars/main.yml[0m[2m:2:[0m [31m[1myaml[new-line-at-end-of-file][0m: No new line character at the end of file[0m
+[35mroles/docker/defaults/main.yml[0m[2m:11:[0m [31m[1myaml[trailing-spaces][0m: Trailing spaces[0m
+[35mroles/docker/meta/main.yml[0m[2m:1:1:[0m [31m[1mmeta-incorrect[0m: Should change default metadata: author[0m
+[35mroles/docker/meta/main.yml[0m[2m:1:1:[0m [31m[1mmeta-incorrect[0m: Should change default metadata: company[0m
+[35mroles/docker/meta/main.yml[0m[2m:1:1:[0m [31m[1mmeta-incorrect[0m: Should change default metadata: license[0m
+[35mroles/docker/meta/main.yml[0m[2m:1:[0m [31m[1mschema[meta][/]: $.galaxy_info.min_ansible_version 2.1 is not of type 'string'. See https://docs.ansible.com/projects/ansible/latest/playbook_guide/playbooks_reuse_roles.html#using-role-dependencies[0m[0m
+[35mroles/docker/meta/main.yml[0m[2m:1:[0m [31m[1myaml[document-start][0m: Missing document start "---"[0m
+[35mroles/docker/meta/main.yml[0m[2m:43:[0m [31m[1myaml[comments-indentation][0m: Comment not indented like content[0m
+[35mroles/docker/meta/main.yml[0m[2m:51:[0m [31m[1myaml[comments-indentation][0m: Comment not indented like content[0m
+[35mroles/docker/tasks/main.yml[0m[2m:46:[0m [31m[1myaml[trailing-spaces][0m: Trailing spaces[0m
+[35mroles/docker_compose/defaults/main.yml[0m[2m:2:1:[0m [31m[1mvar-naming[no-role-prefix][0m: Variables names from within roles should use docker_compose_ as a prefix. (vars: compose_base_dir)[0m
+[35mroles/docker_compose/defaults/main.yml[0m[2m:3:1:[0m [31m[1mvar-naming[no-role-prefix][0m: Variables names from within roles should use docker_compose_ as a prefix. (vars: compose_state)[0m
+[35mroles/docker_compose/defaults/main.yml[0m[2m:4:1:[0m [31m[1mvar-naming[no-role-prefix][0m: Variables names from within roles should use docker_compose_ as a prefix. (vars: compose_projects)[0m
+[35mroles/docker_compose/defaults/main.yml[0m[2m:44:[0m [31m[1myaml[trailing-spaces][0m: Trailing spaces[0m
+[35mroles/mariadb/.travis.yml[0m[2m:12:[0m [31m[1myaml[indentation][/]: Wrong indentation: expected 6 but found 4[0m[0m
+[35mroles/mariadb/.travis.yml[0m[2m:29:[0m [31m[1myaml[new-line-at-end-of-file][0m: No new line character at the end of file[0m
+[35mroles/mariadb/defaults/main.yml[0m[2m:2:[0m [31m[1myaml[new-line-at-end-of-file][0m: No new line character at the end of file[0m
+[35mroles/mariadb/handlers/main.yml[0m[2m:2:[0m [31m[1myaml[new-line-at-end-of-file][0m: No new line character at the end of file[0m
+[35mroles/mariadb/meta/main.yml[0m[2m:1:1:[0m [31m[1mmeta-incorrect[0m: Should change default metadata: author[0m
+[35mroles/mariadb/meta/main.yml[0m[2m:1:1:[0m [31m[1mmeta-incorrect[0m: Should change default metadata: company[0m
+[35mroles/mariadb/meta/main.yml[0m[2m:1:1:[0m [31m[1mmeta-incorrect[0m: Should change default metadata: license[0m
+[35mroles/mariadb/meta/main.yml[0m[2m:1:[0m [31m[1mschema[meta][/]: $.galaxy_info.min_ansible_version 2.9 is not of type 'string'. See https://docs.ansible.com/projects/ansible/latest/playbook_guide/playbooks_reuse_roles.html#using-role-dependencies[0m[0m
+[35mroles/mariadb/meta/main.yml[0m[2m:1:[0m [31m[1myaml[document-start][0m: Missing document start "---"[0m
+[35mroles/mariadb/meta/main.yml[0m[2m:43:[0m [31m[1myaml[comments-indentation][0m: Comment not indented like content[0m
+[35mroles/mariadb/meta/main.yml[0m[2m:53:[0m [31m[1myaml[new-line-at-end-of-file][0m: No new line character at the end of file[0m
+[35mroles/mariadb/meta/main.yml[0m[2m:53:[0m [31m[1myaml[trailing-spaces][0m: Trailing spaces[0m
+[35mroles/mariadb/vars/main.yml[0m[2m:2:[0m [31m[1myaml[new-line-at-end-of-file][0m: No new line character at the end of file[0m
+[35mroles/monitoring/.travis.yml[0m[2m:12:[0m [31m[1myaml[indentation][/]: Wrong indentation: expected 6 but found 4[0m[0m
+[35mroles/monitoring/.travis.yml[0m[2m:29:[0m [31m[1myaml[new-line-at-end-of-file][0m: No new line character at the end of file[0m
+[35mroles/monitoring/defaults/main.yml[0m[2m:2:[0m [31m[1myaml[new-line-at-end-of-file][0m: No new line character at the end of file[0m
+[35mroles/monitoring/handlers/main.yml[0m[2m:2:[0m [31m[1myaml[new-line-at-end-of-file][0m: No new line character at the end of file[0m
+[35mroles/monitoring/meta/main.yml[0m[2m:1:1:[0m [31m[1mmeta-incorrect[0m: Should change default metadata: author[0m
+[35mroles/monitoring/meta/main.yml[0m[2m:1:1:[0m [31m[1mmeta-incorrect[0m: Should change default metadata: company[0m
+[35mroles/monitoring/meta/main.yml[0m[2m:1:1:[0m [31m[1mmeta-incorrect[0m: Should change default metadata: license[0m
+[35mroles/monitoring/meta/main.yml[0m[2m:1:[0m [31m[1mschema[meta][/]: $.galaxy_info.min_ansible_version 2.9 is not of type 'string'. See https://docs.ansible.com/projects/ansible/latest/playbook_guide/playbooks_reuse_roles.html#using-role-dependencies[0m[0m
+[35mroles/monitoring/meta/main.yml[0m[2m:1:[0m [31m[1myaml[document-start][0m: Missing document start "---"[0m
+[35mroles/monitoring/meta/main.yml[0m[2m:43:[0m [31m[1myaml[comments-indentation][0m: Comment not indented like content[0m
+[35mroles/monitoring/meta/main.yml[0m[2m:53:[0m [31m[1myaml[new-line-at-end-of-file][0m: No new line character at the end of file[0m
+[35mroles/monitoring/meta/main.yml[0m[2m:53:[0m [31m[1myaml[trailing-spaces][0m: Trailing spaces[0m
+[35mroles/monitoring/tasks/main.yml[0m[2m:2:[0m [31m[1myaml[new-line-at-end-of-file][0m: No new line character at the end of file[0m
+[35mroles/monitoring/vars/main.yml[0m[2m:2:[0m [31m[1myaml[new-line-at-end-of-file][0m: No new line character at the end of file[0m
+[35mroles/users/.travis.yml[0m[2m:12:[0m [31m[1myaml[indentation][/]: Wrong indentation: expected 6 but found 4[0m[0m
+[35mroles/users/.travis.yml[0m[2m:29:[0m [31m[1myaml[new-line-at-end-of-file][0m: No new line character at the end of file[0m
+[35mroles/users/defaults/main.yml[0m[2m:2:1:[0m [31m[1mvar-naming[no-role-prefix][0m: Variables names from within roles should use users_ as a prefix. (vars: managed_users)[0m
+[35mroles/users/handlers/main.yml[0m[2m:2:[0m [31m[1myaml[new-line-at-end-of-file][0m: No new line character at the end of file[0m
+[35mroles/users/meta/main.yml[0m[2m:1:1:[0m [31m[1mmeta-incorrect[0m: Should change default metadata: author[0m
+[35mroles/users/meta/main.yml[0m[2m:1:1:[0m [31m[1mmeta-incorrect[0m: Should change default metadata: company[0m
+[35mroles/users/meta/main.yml[0m[2m:1:1:[0m [31m[1mmeta-incorrect[0m: Should change default metadata: license[0m
+[35mroles/users/meta/main.yml[0m[2m:1:[0m [31m[1mschema[meta][/]: $.galaxy_info.min_ansible_version 2.9 is not of type 'string'. See https://docs.ansible.com/projects/ansible/latest/playbook_guide/playbooks_reuse_roles.html#using-role-dependencies[0m[0m
+[35mroles/users/meta/main.yml[0m[2m:1:[0m [31m[1myaml[document-start][0m: Missing document start "---"[0m
+[35mroles/users/meta/main.yml[0m[2m:43:[0m [31m[1myaml[comments-indentation][0m: Comment not indented like content[0m
+[35mroles/users/meta/main.yml[0m[2m:53:[0m [31m[1myaml[new-line-at-end-of-file][0m: No new line character at the end of file[0m
+[35mroles/users/meta/main.yml[0m[2m:53:[0m [31m[1myaml[trailing-spaces][0m: Trailing spaces[0m
+[35mroles/users/vars/main.yml[0m[2m:2:[0m [31m[1myaml[new-line-at-end-of-file][0m: No new line character at the end of file[0m
+[35msite.yml[0m[2m:26:[0m [31m[1myaml[empty-lines][0m: Too many blank lines (1 > 0)[0m

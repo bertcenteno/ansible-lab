@@ -13,13 +13,13 @@
     enabled: true
 
 - name: Create application database
-  community.mysql.mysql_db:
+  ansible.mysql.mysql_db:
     name: "{{ mariadb_database }}"
     state: present
     login_unix_socket: /var/lib/mysql/mysql.sock
 
 - name: Create application database user
-  community.mysql.mysql_user:
+  ansible.mysql.mysql_user:
     name: "{{ mariadb_user }}"
     password: "{{ mariadb_password }}"
     host: "%"
