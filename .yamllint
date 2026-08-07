@@ -1,6 +1,11 @@
 ---
 extends: default
 
+ignore: |
+  .venv/
+  .git/
+  roles/**/.travis.yml
+
 rules:
   line-length:
     max: 120
