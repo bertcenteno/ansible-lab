@@ -55,6 +55,39 @@ stage('Get Git Information') {
     }
 }
 
+stage('Detect Environment') {
+
+    steps {
+
+        script {
+
+            if (env.BRANCH_NAME == 'main') {
+
+                env.DEPLOY_ENV = 'PROD'
+
+            } else if (env.BRANCH_NAME == 'develop') {
+
+                env.DEPLOY_ENV = 'DEV'
+
+            } else {
+
+                error("Unsupported branch: ${env.BRANCH_NAME}")
+
+            }
+
+            echo """
+            ============================
+            Branch: ${env.BRANCH_NAME}
+            Environment: ${env.DEPLOY_ENV}
+            ============================
+            """
+
+        }
+
+    }
+
+}
+
 stage('Validate Ansible Syntax') {
 
     steps {
@@ -127,38 +160,6 @@ stage('Validate Ansible Syntax') {
         }
 
 
-stage('Detect Environment') {
-
-    steps {
-
-        script {
-
-            if (env.BRANCH_NAME == 'main') {
-
-                env.DEPLOY_ENV = 'PROD'
-
-            } else if (env.BRANCH_NAME == 'develop') {
-
-                env.DEPLOY_ENV = 'DEV'
-
-            } else {
-
-                error("Unsupported branch: ${env.BRANCH_NAME}")
-
-            }
-
-            echo """
-            ============================
-            Branch: ${env.BRANCH_NAME}
-            Environment: ${env.DEPLOY_ENV}
-            ============================
-            """
-
-        }
-
-    }
-
-}
 
 stage('Approval to Deploy') {
 
