@@ -55,13 +55,42 @@ stage('Get Git Information') {
     }
 }
 
+stage('Detect Environment') {
+
+    steps {
+
+        script {
+
+            if (env.BRANCH_NAME == 'develop') {
+
+                env.DEPLOY_ENV = 'DEV'
+
+            } else if (env.BRANCH_NAME == 'main') {
+
+                env.DEPLOY_ENV = 'PROD'
+
+            } else {
+
+                error("Unsupported branch: ${env.BRANCH_NAME}")
+
+            }
+
+            echo "Git Branch: ${env.BRANCH_NAME}"
+            echo "Deployment Environment: ${env.DEPLOY_ENV}"
+
+        }
+
+    }
+
+}
+
 stage('Validate Ansible Syntax') {
 
     steps {
 
         script {
 
-            def inventoryPath = params.DEPLOY_ENV.toLowerCase()
+            def inventoryPath = env.DEPLOY_ENV.toLowerCase()
 
             sshagent(['ansible-controller-key']) {
 
@@ -126,56 +155,13 @@ stage('Validate Ansible Syntax') {
             }
         }
 
-stage('Debug Environment') {
 
-    steps {
-
-        script {
-
-            env.DEPLOY_ENV_VALUE = params.DEPLOY_ENV
-
-            echo "DEPLOY_ENV selected value = '${env.DEPLOY_ENV_VALUE}'"
-
-        }
-
-    }
-
-}
-
-stage('Detect Environment') {
-
-    steps {
-
-        script {
-
-            if (env.BRANCH_NAME == 'develop') {
-
-                env.DEPLOY_ENV = 'DEV'
-
-            } else if (env.BRANCH_NAME == 'main') {
-
-                env.DEPLOY_ENV = 'PROD'
-
-            } else {
-
-                error("Unsupported branch: ${env.BRANCH_NAME}")
-
-            }
-
-            echo "Git Branch: ${env.BRANCH_NAME}"
-            echo "Deployment Environment: ${env.DEPLOY_ENV}"
-
-        }
-
-    }
-
-}
 
 stage('Approval to Deploy') {
 
     when {
         expression {
-            params.DEPLOY_ENV == 'PROD'
+            env.DEPLOY_ENV == 'PROD'
         }
     }
 
@@ -189,7 +175,7 @@ stage('Approval to Deploy') {
                     message: """
 Deployment Request |
 
-Environment:${DEPLOY_ENV_VALUE}
+Environment:${env.DEPLOY_ENV}
 
 Repository: ${GIT_REPOSITORY}
 Branch: ${GIT_BRANCH_NAME}
@@ -232,7 +218,7 @@ stage('Run Ansible Playbook') {
 
         script {
 
-            def inventoryPath = params.DEPLOY_ENV.toLowerCase()
+            def inventoryPath = env.DEPLOY_ENV.toLowerCase()
 
             sshagent(['ansible-controller-key']) {
 
@@ -311,7 +297,7 @@ success {
               },
               {
                 "title": "Environment",
-                "value": "${params.DEPLOY_ENV}"
+                "value": "${env.DEPLOY_ENV}"
               },
               {
                 "title": "Status",
@@ -411,7 +397,7 @@ failure {
               },
               {
                 "title": "Environment",
-                "value": "${params.DEPLOY_ENV}"
+                "value": "${env.DEPLOY_ENV}"
               },
               {
                 "title": "Status",
@@ -503,7 +489,7 @@ aborted {
               },
 	      {
 	      "title": "Environment",
-	      "value": "${params.DEPLOY_ENV}"
+	      "value": "${env.DEPLOY_ENV}"
 	      },
               {
                 "title": "Repository",
