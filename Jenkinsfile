@@ -8,19 +8,6 @@ pipeline {
 
 	}
 
-parameters {
-
-    choice(
-        name: 'DEPLOY_ENV',
-        choices: [
-            'DEV',
-            'PROD'
-        ],
-        description: 'Select deployment environment'
-    )
-
-}
-
     environment {
         ANSIBLE_CONTROLLER = "ansible@172.26.8.51"
         ANSIBLE_DIR = "/home/ansible/ansible-lab"
