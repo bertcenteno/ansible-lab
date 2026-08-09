@@ -31,6 +31,10 @@ Production-style Ansible automation and CI/CD deployment lab built on Proxmox.
 - Ansible Vault for secrets management
 - Docker installation automation
 - Docker container deployment using Ansible
+- Post-deployment Docker Compose service verification
+- Docker container health verification
+- Post-deployment HTTP application verification
+- Deployment failure protection for unhealthy services
 - Environment-based inventory management
 - DEV and PROD environment separation
 - Jenkins Multibranch Pipeline integration
@@ -302,6 +306,9 @@ Branch-only Ansible controller synchronization
 Contextual Ansible execution error handling
 Reliable local and remote Vault password cleanup
 Environment-aware validation and deployment notifications
+Post-deployment Docker Compose health verification
+Post-deployment HTTP application verification
+Deployment failure on failed post-deployment verification
 
 Jenkins Ansible Execution
 
@@ -322,6 +329,85 @@ Contextual Jenkins error reporting
 Vault password cleanup is executed even when Ansible execution fails.
 
 This reduces duplicated Jenkins pipeline code between DEV and PROD deployment stages.
+
+Deployment Verification
+
+After Docker Compose projects are deployed, Ansible performs post-deployment verification before the Jenkins deployment is considered successful.
+
+The verification workflow checks:
+
+Docker Compose service status
+nginx container running state
+nginx container health status
+MariaDB container running state
+MariaDB container health status
+nginx HTTP application response
+
+Container Verification
+
+Docker Compose service information is collected using:
+
+docker compose ps --format json
+
+Ansible verifies that required containers report:
+
+State: running
+Health: healthy
+
+The following services are currently verified:
+
+nginx
+mariadb
+
+If a required service is not running or does not report a healthy status, the Ansible playbook fails and Jenkins marks the deployment as failed.
+
+HTTP Application Verification
+
+After container health verification succeeds, Ansible performs an HTTP request against:
+
+http://localhost:8080
+
+The nginx application must return:
+
+HTTP 200
+
+The HTTP verification includes retry handling to allow the application time to become available.
+
+Deployment Verification Flow
+
+Docker Compose Deployment
+        |
+        v
+Check Service Status
+        |
+        +------ nginx ------> running + healthy
+        |
+        +------ mariadb ----> running + healthy
+        |
+        v
+nginx HTTP Verification
+        |
+        v
+HTTP 200
+        |
+        v
+Deployment Successful
+
+If any verification step fails:
+
+Verification Failure
+        |
+        v
+Ansible Playbook Failure
+        |
+        v
+Non-Zero Exit Code
+        |
+        v
+Jenkins Deployment Failed
+        |
+        v
+Microsoft Teams Failure Notification
 
 Deployment Commands
 DEV Deployment
@@ -391,6 +477,21 @@ Sensitive variables are stored in encrypted Vault files
 Production deployments require manual approval
 Deployment activities are logged through Jenkins and Teams notifications
 Version History
+
+v1.9
+
+Deployment verification improvements:
+
+- Added post-deployment Docker Compose service verification
+- Added running-state verification for nginx and MariaDB
+- Added container health verification for nginx and MariaDB
+- Added nginx HTTP 200 post-deployment verification
+- Added retry handling for HTTP application verification
+- Added deployment failure protection for unhealthy Docker Compose services
+- Added deployment failure protection for failed HTTP verification
+- Verified container health failure detection
+- Verified successful Pull Request validation
+- Verified PR merge → develop → DEV deployment with post-deployment verification
 
 v1.8
 
