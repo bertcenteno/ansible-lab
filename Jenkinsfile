@@ -213,6 +213,8 @@ stage('PR Validation') {
         echo "Running Pull Request validation only"
 
         sh '''
+	. .ci-venv/bin/activate
+
         ansible-playbook \
         -i inventories/dev/hosts \
         --syntax-check \
