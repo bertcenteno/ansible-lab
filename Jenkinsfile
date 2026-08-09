@@ -31,10 +31,15 @@ def runAnsiblePlaybook = { String inventoryPath, String extraArgs ->
                 ''',
                 returnStatus: true
             )
-
-            if (exitCode != 0) {
-                error("Ansible playbook execution failed with exit code ${exitCode}")
-            }
+		if (exitCode != 0) {
+		    error("""
+		Ansible execution failed
+		Environment: ${env.DEPLOY_ENV}
+		Inventory: ${inventoryPath}
+		Arguments: ${extraArgs ?: 'None'}
+		Exit Code: ${exitCode}
+		""".stripIndent().trim())
+		}
         }
     }
 }
