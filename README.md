@@ -8,6 +8,7 @@ Production-style Ansible automation and CI/CD deployment lab built on Proxmox.
 - Ubuntu / Rocky Linux Managed Servers
 - Jenkins CI/CD Server
 - Proxmox Virtualization Platform
+- GitHub Repository
 
 ## Ansible Roles
 
@@ -41,6 +42,9 @@ Production-style Ansible automation and CI/CD deployment lab built on Proxmox.
 - Ansible syntax validation before deployment
 - Automated Ansible dependency installation
 - Automated deployment notifications via Microsoft Teams
+- Automated PR validation before merge
+- Automated DEV deployment after merge
+- Reusable Jenkins pipeline helper closure for Ansible execution
 
 ---
 
@@ -77,6 +81,7 @@ ansible-lab/
 ├── site.yml
 ├── Jenkinsfile
 └── README.md
+
 Environment Management
 
 Separate inventories are maintained for DEV and PROD environments.
@@ -92,121 +97,25 @@ Features:
 Automatic deployment
 No approval required
 Uses DEV variables and secrets
-Deployment Flow
+Deployment triggered automatically after changes are merged into develop
 
-Deployment is controlled by Git branches using Jenkins Multibranch Pipeline.
+PROD Environment
 
-Before deployment, all changes pass through automated CI validation.
+Inventory:
 
-CI Validation Pipeline
-Git Push
-    |
-    v
-Jenkins Multibranch Pipeline
-    |
-    v
-Get Git Information
-    |
-    v
-Detect Environment
-    |
-    v
-Install CI Dependencies
-    |
-    v
-YAML Lint Validation
-    |
-    v
-Ansible Lint Validation
-    |
-    v
-Ansible Syntax Validation
-DEV Deployment
-Push to develop branch
-        |
-        v
-Jenkins Multibranch Pipeline
-        |
-        v
-Detect Environment
+inventories/prod/hosts
 
-Branch: develop
-Environment: DEV
+Features:
 
-        |
-        v
-CI Validation
-        |
-        v
-Sync Repository to Ansible Controller
-        |
-        v
-Install Ansible Dependencies
-        |
-        v
-Deploy using DEV inventory
+Production deployment
+Manual approval required
+Uses PROD variables and secrets
+Deployment triggered from the main branch
 
-No approval required for DEV deployment.
-
-PROD Deployment
-Push to main branch
-        |
-        v
-Jenkins Multibranch Pipeline
-        |
-        v
-Detect Environment
-
-Branch: main
-Environment: PROD
-
-        |
-        v
-CI Validation
-        |
-        v
-Sync Repository to Ansible Controller
-        |
-        v
-Install Ansible Dependencies
-        |
-        v
-Approval Gate
-        |
-        v
-Deploy using PROD inventory
-
-Production deployment requires manual approval before execution.
-
-Pull Request Workflow
-
-Feature branches are validated before merging into develop.
-
-feature/*
-     |
-     |
-     v
-Pull Request
-     |
-     |
-     v
-Jenkins PR Validation
-     |
-     |
-     +----------------+
-     |
-     v
-YAML Lint
-     |
-     v
-Ansible Lint
-     |
-     v
-Ansible Syntax Validation
-     |
-     v
-Merge to develop
 Branching Strategy
+
+The repository uses a feature branch → Pull Request → develop → main workflow.
+
 feature/*
     |
     | Pull Request
@@ -222,22 +131,166 @@ main
     | Approval Gate
     v
 PROD Deployment
+
+Feature Branches
+
+Development work is performed using feature branches.
+
+Example:
+
+feature/v1.7-jenkinsfile-refactor
+
+Changes are submitted through a Pull Request targeting the develop branch.
+
+
+CI/CD Pipeline
+
+The Jenkins Multibranch Pipeline automatically discovers branches and Pull Requests from GitHub.
+
+Pull Request Validation
+
+When a Pull Request is created or updated, GitHub triggers Jenkins through a webhook.
+
+The PR validation workflow performs:
+
+GitHub Pull Request
+        |
+        v
+Jenkins Multibranch Pipeline
+        |
+        v
+Checkout SCM
+        |
+        v
+Install CI Dependencies
+        |
+        v
+YAML Lint
+        |
+        v
+Ansible Lint
+        |
+        v
+PR Validation
+        |
+        v
+Ansible Syntax Validation
+        |
+        v
+PASS
+
+Pull Request validation does not deploy to any environment.
+
+The purpose of the PR pipeline is to verify that the proposed changes meet the repository's validation requirements before they are merged.
+
+GitHub Webhook
+
+GitHub webhooks are used to automatically trigger Jenkins when repository events occur.
+
+The webhook is configured to send:
+
+Push events
+Pull Request events
+
+This allows Jenkins to automatically validate Pull Requests without requiring a manual repository scan.
+
+DEV Deployment
+
+After a Pull Request is successfully validated and merged into develop, Jenkins automatically starts the DEV deployment pipeline.
+
+Pull Request
+     |
+     v
+PR Validation
+     |
+     v
+Merge into develop
+     |
+     v
+GitHub Webhook
+     |
+     v
+Jenkins Multibranch Pipeline
+     |
+     v
+Detect Environment
+     |
+     v
+DEV
+     |
+     v
+Ansible Deployment
+     |
+     v
+Managed Servers
+
+No approval is required for DEV deployments.
+
+PROD Deployment
+
+Production deployments are triggered from the main branch.
+
+Pull Request
+     |
+     v
+develop
+     |
+     v
+Validation
+     |
+     v
+Merge into main
+     |
+     v
+Jenkins Multibranch Pipeline
+     |
+     v
+Detect Environment
+     |
+     v
+Approval Gate
+     |
+     v
+PROD Deployment
+
+Production deployment requires manual approval before the Ansible playbook is executed.
+
 Jenkins Pipeline Features
 
 The Jenkins pipeline provides:
 
 GitHub SCM integration
 Jenkins Multibranch Pipeline
+Automatic branch discovery
+Pull Request discovery
+GitHub webhook integration
 Branch-based environment detection
-Pull Request validation
+DEV / PROD inventory selection
+CI dependency installation
 YAML lint validation
 Ansible lint validation
 Ansible syntax validation
+Pull Request validation
 Remote Ansible execution
 Ansible Vault password injection
-Automated Ansible dependency installation
+Reusable Jenkins pipeline helper closure
 Production approval gate
 Microsoft Teams deployment notifications
+Jenkins Ansible Execution
+
+The Jenkinsfile uses a reusable helper closure for Ansible execution.
+
+The helper handles:
+
+Ansible controller authentication
+Vault password transfer
+Ansible playbook execution
+Inventory selection
+Additional Ansible arguments
+Vault password cleanup
+
+This reduces duplicated Jenkins pipeline code between DEV and PROD deployment stages.
+
 Deployment Commands
 DEV Deployment
 ansible-playbook \
@@ -249,28 +302,79 @@ ansible-playbook \
 -i inventories/prod/hosts \
 --vault-password-file .vault_pass \
 site.yml
+Ansible Syntax Validation
+ansible-playbook \
+-i inventories/dev/hosts \
+--syntax-check \
+site.yml
 CI/CD Deployment Flow
-                 GitHub
-                    |
-                    v
-                Jenkins
-                    |
-        +-----------+-----------+
-        |                       |
-       DEV                     PROD
-        |                       |
- inventories/dev        inventories/prod
-        |                       |
-        +-----------+-----------+
-                    |
-                    v
-          Ansible Control Node
-                    |
-                    v
-             Managed Servers
+                         GitHub
+                            |
+                +-----------+-----------+
+                |                       |
+             Push Event           Pull Request
+                |                       |
+                v                       v
+             Jenkins              PR Validation
+                |                       |
+                |                 +-----+-----+
+                |                 |           |
+                |              YAML Lint   Ansible Lint
+                |                 |           |
+                |                 +-----+-----+
+                |                       |
+                |                 Syntax Check
+                |                       |
+                |                    PASS
+                |                       |
+                |                  Merge to develop
+                |                       |
+                +-----------+-----------+
+                            |
+                            v
+                    Detect Environment
+                            |
+                     +------+------+
+                     |             |
+                    DEV           PROD
+                     |             |
+              Auto Deployment   Approval
+                     |             |
+              inventories/dev  inventories/prod
+                     |             |
+                     +------+------+
+                            |
+                            v
+                   Ansible Control Node
+                            |
+                            v
+                    Managed Servers
 Security
-Secrets are managed using Ansible Vault
+
+Secrets are managed using Ansible Vault.
+
 Vault passwords are injected securely during Jenkins execution
+Vault password files are removed after deployment
+Sensitive variables are stored in encrypted Vault files
 Production deployments require manual approval
-Deployment activities are logged through Jenkins
-Deployment status notifications are sent through Microsoft Teams
+Deployment activities are logged through Jenkins and Teams notifications
+Version History
+v1.7
+
+Jenkins CI/CD pipeline improvements:
+
+Refactored Jenkins Ansible execution logic
+Added reusable Jenkins pipeline helper closure
+Added YAML lint validation
+Added Ansible lint validation
+Added Pull Request validation workflow
+Added GitHub Pull Request webhook automation
+Enabled automatic PR validation on changes
+Verified automatic DEV deployment after merging into develop
+v1.6
+Added CI validation pipeline
+Added Jenkins validation workflow
+Added YAML and Ansible validation preparation
+Improved Jenkins Multibranch Pipeline workflow
+
+
