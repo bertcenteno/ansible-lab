@@ -33,7 +33,7 @@
   ansible.builtin.command:
     cmd: docker compose ps --format json
     chdir: "{{ docker_compose_base_dir }}/{{ item }}"
-  register: compose_service_status
+  register: docker_compose_service_status
   changed_when: false
   loop:
     - nginx
@@ -50,7 +50,7 @@
       Health={{ (item.stdout | from_json).Health }}
     success_msg: >-
       Docker Compose project {{ item.item }} is running and healthy.
-  loop: "{{ compose_service_status.results }}"
+  loop: "{{ docker_compose_service_status.results }}"
   loop_control:
     label: "{{ item.item }}"
 
@@ -59,7 +59,7 @@
     url: http://localhost:8080
     method: GET
     status_code: 200
-  register: nginx_http_check
+  register: docker_compose_nginx_http_check
   retries: 5
   delay: 5
-  until: nginx_http_check.status == 200
+  until: docker_compose_nginx_http_check.status == 200
