@@ -45,6 +45,12 @@ Production-style Ansible automation and CI/CD deployment lab built on Proxmox.
 - Automated PR validation before merge
 - Automated DEV deployment after merge
 - Reusable Jenkins pipeline helper closure for Ansible execution
+- Reliable Jenkins Vault secret cleanup using shell EXIT traps
+- Explicit Ansible exit code handling with contextual pipeline errors
+- Separation of Pull Request validation and deployment stages
+- Consistent CI virtual environment for PR validation
+- Environment-aware Microsoft Teams validation and deployment notifications
+- CI failure protection for YAML and Ansible lint violations
 
 ---
 
@@ -171,15 +177,16 @@ YAML Lint
 Ansible Lint
         |
         v
-PR Validation
-        |
-        v
-Ansible Syntax Validation
+PR Syntax Validation
+(.ci-venv)
         |
         v
 PASS
+        |
+        v
+GitHub Check: Green
 
-Pull Request validation does not deploy to any environment.
+Pull Request validation is isolated from deployment operations. PR builds do not synchronize files to the Ansible controller, install dependencies on the controller, request deployment approval, or execute a deployment.
 
 The purpose of the PR pipeline is to verify that the proposed changes meet the repository's validation requirements before they are merged.
 
@@ -225,6 +232,20 @@ Ansible Deployment
 Managed Servers
 
 No approval is required for DEV deployments.
+
+Branch deployment order:
+
+Sync Repository to Ansible Controller
+        |
+        v
+Install Ansible Dependencies
+        |
+        v
+Validate Ansible Syntax
+        |
+        v
+Run Ansible Playbook
+
 
 PROD Deployment
 
@@ -276,6 +297,12 @@ Ansible Vault password injection
 Reusable Jenkins pipeline helper closure
 Production approval gate
 Microsoft Teams deployment notifications
+PR and deployment stage separation
+Branch-only Ansible controller synchronization
+Contextual Ansible execution error handling
+Reliable local and remote Vault password cleanup
+Environment-aware validation and deployment notifications
+
 Jenkins Ansible Execution
 
 The Jenkinsfile uses a reusable helper closure for Ansible execution.
@@ -287,7 +314,12 @@ Vault password transfer
 Ansible playbook execution
 Inventory selection
 Additional Ansible arguments
-Vault password cleanup
+Local Vault password cleanup using an EXIT trap
+Remote Vault password cleanup using an EXIT trap
+Ansible exit code capture
+Contextual Jenkins error reporting
+
+Vault password cleanup is executed even when Ansible execution fails.
 
 This reduces duplicated Jenkins pipeline code between DEV and PROD deployment stages.
 
@@ -359,6 +391,26 @@ Sensitive variables are stored in encrypted Vault files
 Production deployments require manual approval
 Deployment activities are logged through Jenkins and Teams notifications
 Version History
+
+v1.8
+
+Pipeline quality and reliability improvements:
+
+Added reliable local Jenkins Vault password cleanup using EXIT traps
+Added reliable remote Ansible controller Vault password cleanup using EXIT traps
+Added explicit Ansible exit code handling
+Added contextual pipeline error messages with environment, inventory, arguments, and exit code
+Separated Pull Request validation from controller and deployment stages
+Restricted Ansible controller synchronization and dependency installation to branch pipelines
+Reordered branch deployment to sync repository before remote syntax validation
+Standardized PR validation on the CI virtual environment
+Added environment-aware Microsoft Teams notification titles
+Added separate validation and deployment success/failure notifications
+Verified YAML lint failure protection
+Verified Ansible lint failure protection
+Verified Ansible execution failure handling
+Verified successful PR validation → merge → develop → DEV deployment workflow
+
 v1.7
 
 Jenkins CI/CD pipeline improvements:
