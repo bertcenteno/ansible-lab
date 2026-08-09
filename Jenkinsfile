@@ -7,26 +7,33 @@ def runAnsiblePlaybook = { String inventoryPath, String extraArgs ->
             "EXTRA_ARGS=${extraArgs}"
         ]) {
 
-            sh '''
-                set -e
+            def exitCode = sh(
+                script: '''
+                    set -e
 
-                echo "$VAULT_PASSWORD" > vault_pass.tmp
-                chmod 600 vault_pass.tmp
+                    echo "$VAULT_PASSWORD" > vault_pass.tmp
+                    chmod 600 vault_pass.tmp
 
-                trap 'rm -f vault_pass.tmp' EXIT
+                    trap 'rm -f vault_pass.tmp' EXIT
 
-                scp vault_pass.tmp ${ANSIBLE_CONTROLLER}:${ANSIBLE_DIR}/.vault_pass
+                    scp vault_pass.tmp ${ANSIBLE_CONTROLLER}:${ANSIBLE_DIR}/.vault_pass
 
-                ssh ${ANSIBLE_CONTROLLER} "
-                    trap 'rm -f ${ANSIBLE_DIR}/.vault_pass' EXIT
-                    cd ${ANSIBLE_DIR} &&
-                    ansible-playbook \
-                    -i inventories/${INVENTORY_PATH}/hosts \
-                    ${EXTRA_ARGS} \
-                    --vault-password-file .vault_pass \
-                    site.yml
-                "
-            '''
+                    ssh ${ANSIBLE_CONTROLLER} "
+                        trap 'rm -f ${ANSIBLE_DIR}/.vault_pass' EXIT
+                        cd ${ANSIBLE_DIR} &&
+                        ansible-playbook \
+                        -i inventories/${INVENTORY_PATH}/hosts \
+                        ${EXTRA_ARGS} \
+                        --vault-password-file .vault_pass \
+                        site.yml
+                    "
+                ''',
+                returnStatus: true
+            )
+
+            if (exitCode != 0) {
+                error("Ansible playbook execution failed with exit code ${exitCode}")
+            }
         }
     }
 }
