@@ -225,6 +225,12 @@ stage('PR Validation') {
 
 stage('Validate Ansible Syntax') {
 
+	when {
+	    expression {
+	        return env.PIPELINE_TYPE == "BRANCH"
+	    }
+	}
+
     steps {
 
         script {
@@ -243,6 +249,12 @@ stage('Validate Ansible Syntax') {
 }
 
         stage('Sync Repository to Ansible Controller') {
+
+        when {
+            expression {
+                return env.PIPELINE_TYPE == "BRANCH"
+            }
+        }
             steps {
                 sshagent(['ansible-controller-key']) {
                     sh '''
@@ -259,6 +271,12 @@ stage('Validate Ansible Syntax') {
 
 
         stage('Install Ansible Dependencies') {
+
+        when {
+            expression {
+                return env.PIPELINE_TYPE == "BRANCH"
+            }
+        }
             steps {
                 sshagent(['ansible-controller-key']) {
                     sh '''
