@@ -2,27 +2,45 @@ def runAnsiblePlaybook = { String inventoryPath, String extraArgs ->
 
     sshagent(['ansible-controller-key']) {
 
-        sh """
-            echo "\$VAULT_PASSWORD" > vault_pass.tmp
-            chmod 600 vault_pass.tmp
+        withEnv([
+            "INVENTORY_PATH=${inventoryPath}",
+            "EXTRA_ARGS=${extraArgs}"
+        ]) {
 
-            scp vault_pass.tmp ${ANSIBLE_CONTROLLER}:${ANSIBLE_DIR}/.vault_pass
+            def exitCode = sh(
+                script: '''
+                    set -e
 
-            ssh ${ANSIBLE_CONTROLLER} "
-                cd ${ANSIBLE_DIR} &&
-                ansible-playbook \
-                -i inventories/${inventoryPath}/hosts \
-                ${extraArgs} \
-                --vault-password-file .vault_pass \
-                site.yml
-            "
+                    echo "$VAULT_PASSWORD" > vault_pass.tmp
+                    chmod 600 vault_pass.tmp
 
-            ssh ${ANSIBLE_CONTROLLER} "
-                rm -f ${ANSIBLE_DIR}/.vault_pass
-            "
+                    trap 'rm -f vault_pass.tmp' EXIT
 
-            rm -f vault_pass.tmp
-        """
+                    scp vault_pass.tmp ${ANSIBLE_CONTROLLER}:${ANSIBLE_DIR}/.vault_pass
+
+                    ssh ${ANSIBLE_CONTROLLER} "
+                        trap 'rm -f ${ANSIBLE_DIR}/.vault_pass' EXIT
+                        cd ${ANSIBLE_DIR} &&
+                        ansible-playbook \
+                        -i inventories/${INVENTORY_PATH}/hosts \
+                        ${EXTRA_ARGS} \
+                        --vault-password-file .vault_pass \
+                        site.yml
+
+                    "
+                ''',
+                returnStatus: true
+            )
+		if (exitCode != 0) {
+		    error("""
+		Ansible execution failed
+		Environment: ${env.DEPLOY_ENV}
+		Inventory: ${inventoryPath}
+		Arguments: ${extraArgs ?: 'None'}
+		Exit Code: ${exitCode}
+		""".stripIndent().trim())
+		}
+        }
     }
 }
 
@@ -195,6 +213,8 @@ stage('PR Validation') {
         echo "Running Pull Request validation only"
 
         sh '''
+	. .ci-venv/bin/activate
+
         ansible-playbook \
         -i inventories/dev/hosts \
         --syntax-check \
@@ -205,7 +225,56 @@ stage('PR Validation') {
 
 }
 
+
+
+stage('Sync Repository to Ansible Controller') {
+
+        when {
+            expression {
+                return env.PIPELINE_TYPE == "BRANCH"
+            }
+        }
+            steps {
+                sshagent(['ansible-controller-key']) {
+                    sh '''
+                    rsync -avz --delete \
+                    --exclude ".git" \
+                    --exclude ".gitignore" \
+                    --exclude "Jenkinsfile" \
+                    ./ \
+                    ${ANSIBLE_CONTROLLER}:${ANSIBLE_DIR}/
+                    '''
+                }
+            }
+        }
+
+
+stage('Install Ansible Dependencies') {
+
+        when {
+            expression {
+                return env.PIPELINE_TYPE == "BRANCH"
+            }
+        }
+            steps {
+                sshagent(['ansible-controller-key']) {
+                    sh '''
+                    ssh ${ANSIBLE_CONTROLLER} "
+                    cd ${ANSIBLE_DIR} &&
+                    ansible-galaxy collection install -r requirements.yml
+                    "
+                    '''
+                }
+            }
+        }
+
 stage('Validate Ansible Syntax') {
+
+	when {
+	    expression {
+	        return env.PIPELINE_TYPE == "BRANCH"
+	    }
+	}
 
     steps {
 
@@ -223,37 +292,6 @@ stage('Validate Ansible Syntax') {
     }
 
 }
-
-        stage('Sync Repository to Ansible Controller') {
-            steps {
-                sshagent(['ansible-controller-key']) {
-                    sh '''
-                    rsync -avz --delete \
-                    --exclude ".git" \
-                    --exclude ".gitignore" \
-                    --exclude "Jenkinsfile" \
-                    ./ \
-                    ${ANSIBLE_CONTROLLER}:${ANSIBLE_DIR}/
-                    '''
-                }
-            }
-        }
-
-
-        stage('Install Ansible Dependencies') {
-            steps {
-                sshagent(['ansible-controller-key']) {
-                    sh '''
-                    ssh ${ANSIBLE_CONTROLLER} "
-                    cd ${ANSIBLE_DIR} &&
-                    ansible-galaxy collection install -r requirements.yml
-                    "
-                    '''
-                }
-            }
-        }
-
-
 
 stage('Approval to Deploy') {
 
@@ -346,6 +384,9 @@ success {
 
         env.BUILD_TIME = "${currentBuild.duration / 1000} seconds"
 	env.APPROVER_VALUE = env.APPROVER ?: "Not Required"
+	def notificationTitle = env.PIPELINE_TYPE == "PR" ?
+	    "✅ Jenkins Validation Successful" :
+	    "✅ Jenkins Deployment Successful"
 
         def payload = """
 {
@@ -362,7 +403,7 @@ success {
             "type": "TextBlock",
             "size": "Large",
             "weight": "Bolder",
-            "text": "✅ Jenkins Deployment Successful"
+	    "text": "${notificationTitle}"
           },
           {
             "type": "FactSet",
@@ -446,6 +487,9 @@ failure {
 
         env.BUILD_TIME = "${currentBuild.duration / 1000} seconds"
         env.APPROVER_VALUE = env.APPROVER ?: "Not Required"
+	def notificationTitle = env.PIPELINE_TYPE == "PR" ?
+	    "❌ Jenkins Validation Failed" :
+	    "❌ Jenkins Deployment Failed"
 
         def payload = """
 {
@@ -462,7 +506,7 @@ failure {
             "type": "TextBlock",
             "size": "Large",
             "weight": "Bolder",
-            "text": "❌ Jenkins Deployment Failed"
+	    "text": "${notificationTitle}"
           },
           {
             "type": "FactSet",
