@@ -26,6 +26,9 @@ def runAnsiblePlaybook = { String inventoryPath, String extraArgs ->
                         ${EXTRA_ARGS} \
                         --vault-password-file .vault_pass \
                         site.yml
+			echo 'TEST: forcing pipeline failure with exit code 7'
+			exit 7
+
                     "
                 ''',
                 returnStatus: true
