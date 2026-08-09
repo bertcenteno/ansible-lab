@@ -1,8 +1,0 @@
----
-- name: Ansible lint failure test
-  hosts: all
-  gather_facts: false
-
-  tasks:
-    - name: Run test command
-      shell: echo "test"
