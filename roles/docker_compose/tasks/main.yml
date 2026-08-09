@@ -28,3 +28,13 @@
   loop: "{{ docker_compose_projects }}"
   loop_control:
     label: "{{ item.name }}"
+
+- name: Verify nginx HTTP response
+  ansible.builtin.uri:
+    url: http://localhost:8080
+    method: GET
+    status_code: 200
+  register: nginx_http_check
+  retries: 5
+  delay: 5
+  until: nginx_http_check.status == 200
