@@ -29,6 +29,31 @@
   loop_control:
     label: "{{ item.name }}"
 
+- name: Get Docker Compose service status
+  ansible.builtin.command:
+    cmd: docker compose ps --format json
+    chdir: "{{ docker_compose_base_dir }}/{{ item }}"
+  register: compose_service_status
+  changed_when: false
+  loop:
+    - nginx
+    - mariadb
+
+- name: Verify Docker Compose services are running and healthy
+  ansible.builtin.assert:
+    that:
+      - (item.stdout | from_json).State == "running"
+      - (item.stdout | from_json).Health == "healthy"
+    fail_msg: >-
+      Docker Compose project {{ item.item }} failed health verification.
+      State={{ (item.stdout | from_json).State }},
+      Health={{ (item.stdout | from_json).Health }}
+    success_msg: >-
+      Docker Compose project {{ item.item }} is running and healthy.
+  loop: "{{ compose_service_status.results }}"
+  loop_control:
+    label: "{{ item.item }}"
+
 - name: Verify nginx HTTP response
   ansible.builtin.uri:
     url: http://localhost:8080
