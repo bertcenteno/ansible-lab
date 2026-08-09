@@ -25,6 +25,9 @@ def runAnsiblePlaybook = { String inventoryPath, String extraArgs ->
                     ${EXTRA_ARGS} \
                     --vault-password-file .vault_pass \
                     site.yml
+
+		    echo 'TEST: forcing deployment failure'
+    		    exit 1
                 "
             '''
         }
