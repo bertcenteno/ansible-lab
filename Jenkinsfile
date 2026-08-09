@@ -1,6 +1,6 @@
 pipeline {
 
-def runAnsiblePlaybook(String inventoryPath, String extraArgs) {
+def runAnsiblePlaybook = { String inventoryPath, String extraArgs ->
 
     sshagent(['ansible-controller-key']) {
 
