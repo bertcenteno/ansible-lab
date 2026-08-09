@@ -384,6 +384,9 @@ success {
 
         env.BUILD_TIME = "${currentBuild.duration / 1000} seconds"
 	env.APPROVER_VALUE = env.APPROVER ?: "Not Required"
+	def notificationTitle = env.PIPELINE_TYPE == "PR" ?
+	    "✅ Jenkins Validation Successful" :
+	    "✅ Jenkins Deployment Successful"
 
         def payload = """
 {
@@ -400,7 +403,7 @@ success {
             "type": "TextBlock",
             "size": "Large",
             "weight": "Bolder",
-            "text": "✅ Jenkins Deployment Successful"
+	    "text": "${notificationTitle}"
           },
           {
             "type": "FactSet",
@@ -484,6 +487,9 @@ failure {
 
         env.BUILD_TIME = "${currentBuild.duration / 1000} seconds"
         env.APPROVER_VALUE = env.APPROVER ?: "Not Required"
+	def notificationTitle = env.PIPELINE_TYPE == "PR" ?
+	    "❌ Jenkins Validation Failed" :
+	    "❌ Jenkins Deployment Failed"
 
         def payload = """
 {
@@ -500,7 +506,7 @@ failure {
             "type": "TextBlock",
             "size": "Large",
             "weight": "Bolder",
-            "text": "❌ Jenkins Deployment Failed"
+	    "text": "${notificationTitle}"
           },
           {
             "type": "FactSet",
