@@ -1,32 +1,33 @@
-pipeline {
-
 def runAnsiblePlaybook = { String inventoryPath, String extraArgs ->
 
     sshagent(['ansible-controller-key']) {
 
         sh """
-        echo "\$VAULT_PASSWORD" > vault_pass.tmp
-        chmod 600 vault_pass.tmp
+            echo "\$VAULT_PASSWORD" > vault_pass.tmp
+            chmod 600 vault_pass.tmp
 
-        scp vault_pass.tmp ${ANSIBLE_CONTROLLER}:${ANSIBLE_DIR}/.vault_pass
+            scp vault_pass.tmp ${ANSIBLE_CONTROLLER}:${ANSIBLE_DIR}/.vault_pass
 
-        ssh ${ANSIBLE_CONTROLLER} "
-            cd ${ANSIBLE_DIR} &&
-            ansible-playbook \
-            -i inventories/${inventoryPath}/hosts \
-            ${extraArgs} \
-            --vault-password-file .vault_pass \
-            site.yml
-        "
+            ssh ${ANSIBLE_CONTROLLER} "
+                cd ${ANSIBLE_DIR} &&
+                ansible-playbook \
+                -i inventories/${inventoryPath}/hosts \
+                ${extraArgs} \
+                --vault-password-file .vault_pass \
+                site.yml
+            "
 
-        ssh ${ANSIBLE_CONTROLLER} "
-            rm -f ${ANSIBLE_DIR}/.vault_pass
-        "
+            ssh ${ANSIBLE_CONTROLLER} "
+                rm -f ${ANSIBLE_DIR}/.vault_pass
+            "
 
-        rm -f vault_pass.tmp
+            rm -f vault_pass.tmp
         """
     }
 }
+
+pipeline {
+
 
     agent any
 
