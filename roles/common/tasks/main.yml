@@ -25,4 +25,3 @@
   ansible.builtin.package:
     name: "{{ common_packages }}"
     state: present
-

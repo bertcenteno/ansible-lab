@@ -43,4 +43,4 @@
     state: started
     restart_policy: unless-stopped
     published_ports: "{{ item.published_ports | default(omit) }}"
-  loop: "{{ docker_containers }}" 
+  loop: "{{ docker_containers }}"

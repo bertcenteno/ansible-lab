@@ -1,5 +1,5 @@
 ---
-managed_users:
+users_managed_users:
   - username: devops
     fullname: DevOps User
     shell: /bin/bash

@@ -1,32 +1,70 @@
 ---
 - name: Create compose project directories
   ansible.builtin.file:
-    path: "{{ compose_base_dir }}/{{ item.name }}"
+    path: "{{ docker_compose_base_dir }}/{{ item.name }}"
     state: directory
     owner: root
     group: root
     mode: "0755"
-  loop: "{{ compose_projects }}"
+  loop: "{{ docker_compose_projects }}"
   loop_control:
     label: "{{ item.name }}"
-
 
 - name: Deploy docker-compose.yml files
   ansible.builtin.template:
     src: docker-compose.yml.j2
-    dest: "{{ compose_base_dir }}/{{ item.name }}/docker-compose.yml"
+    dest: "{{ docker_compose_base_dir }}/{{ item.name }}/docker-compose.yml"
     owner: root
     group: root
     mode: "0644"
-  loop: "{{ compose_projects }}"
+  loop: "{{ docker_compose_projects }}"
   loop_control:
     label: "{{ item.name }}"
-
 
 - name: Start compose projects
   community.docker.docker_compose_v2:
-    project_src: "{{ compose_base_dir }}/{{ item.name }}"
-    state: "{{ compose_state }}"
-  loop: "{{ compose_projects }}"
+    project_src: "{{ docker_compose_base_dir }}/{{ item.name }}"
+    state: "{{ docker_compose_state }}"
+  loop: "{{ docker_compose_projects }}"
   loop_control:
     label: "{{ item.name }}"
+
+- name: Get Docker Compose service status
+  ansible.builtin.command:
+    cmd: docker compose ps --format json
+    chdir: "{{ docker_compose_base_dir }}/{{ item }}"
+  register: docker_compose_service_status
+  changed_when: false
+  retries: 12
+  delay: 5
+  until:
+    - (docker_compose_service_status.stdout | from_json).State == "running"
+    - (docker_compose_service_status.stdout | from_json).Health == "healthy"
+  loop:
+    - nginx
+    - mariadb
+
+- name: Verify Docker Compose services are running and healthy
+  ansible.builtin.assert:
+    that:
+      - (item.stdout | from_json).State == "running"
+      - (item.stdout | from_json).Health == "healthy"
+    fail_msg: >-
+      Docker Compose project {{ item.item }} failed health verification.
+      State={{ (item.stdout | from_json).State }},
+      Health={{ (item.stdout | from_json).Health }}
+    success_msg: >-
+      Docker Compose project {{ item.item }} is running and healthy.
+  loop: "{{ docker_compose_service_status.results }}"
+  loop_control:
+    label: "{{ item.item }}"
+
+- name: Verify nginx HTTP response
+  ansible.builtin.uri:
+    url: http://localhost:8080
+    method: GET
+    status_code: 200
+  register: docker_compose_nginx_http_check
+  retries: 5
+  delay: 5
+  until: docker_compose_nginx_http_check.status == 200

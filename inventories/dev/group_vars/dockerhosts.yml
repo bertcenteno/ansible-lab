@@ -1,4 +1,5 @@
-environment: DEV
+---
+deployment_environment: DEV
 
 mariadb_database: dev_database
 mariadb_user: dev_user

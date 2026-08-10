@@ -1,0 +1,9 @@
+---
+profile: basic
+
+exclude_paths:
+  - .venv/
+  - .git/
+  - roles/*/tests/
+  - roles/*/.travis.yml
+  - "**/vault.yml"

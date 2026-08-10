@@ -1,4 +1,51 @@
+def runAnsiblePlaybook = { String inventoryPath, String extraArgs ->
+
+    sshagent(['ansible-controller-key']) {
+
+        withEnv([
+            "INVENTORY_PATH=${inventoryPath}",
+            "EXTRA_ARGS=${extraArgs}"
+        ]) {
+
+            def exitCode = sh(
+                script: '''
+                    set -e
+
+                    echo "$VAULT_PASSWORD" > vault_pass.tmp
+                    chmod 600 vault_pass.tmp
+
+                    trap 'rm -f vault_pass.tmp' EXIT
+
+                    scp vault_pass.tmp ${ANSIBLE_CONTROLLER}:${ANSIBLE_DIR}/.vault_pass
+
+                    ssh ${ANSIBLE_CONTROLLER} "
+                        trap 'rm -f ${ANSIBLE_DIR}/.vault_pass' EXIT
+                        cd ${ANSIBLE_DIR} &&
+                        ansible-playbook \
+                        -i inventories/${INVENTORY_PATH}/hosts \
+                        ${EXTRA_ARGS} \
+                        --vault-password-file .vault_pass \
+                        site.yml
+
+                    "
+                ''',
+                returnStatus: true
+            )
+		if (exitCode != 0) {
+		    error("""
+		Ansible execution failed
+		Environment: ${env.DEPLOY_ENV}
+		Inventory: ${inventoryPath}
+		Arguments: ${extraArgs ?: 'None'}
+		Exit Code: ${exitCode}
+		""".stripIndent().trim())
+		}
+        }
+    }
+}
+
 pipeline {
+
 
     agent any
 
@@ -61,24 +108,42 @@ stage('Detect Environment') {
 
         script {
 
-            if (env.BRANCH_NAME == 'main') {
+            if (env.CHANGE_ID) {
 
-                env.DEPLOY_ENV = 'PROD'
+                env.PIPELINE_TYPE = "PR"
+                env.DEPLOY_ENV = "VALIDATION"
 
-            } else if (env.BRANCH_NAME == 'develop') {
+            }
+            else if (env.BRANCH_NAME == 'develop') {
 
-                env.DEPLOY_ENV = 'DEV'
+                env.PIPELINE_TYPE = "BRANCH"
+                env.DEPLOY_ENV = "DEV"
 
-            } else {
+            }
+            else if (env.BRANCH_NAME == 'main') {
+
+                env.PIPELINE_TYPE = "BRANCH"
+                env.DEPLOY_ENV = "PROD"
+
+            }
+	    else if (env.BRANCH_NAME.startsWith('feature/')) {
+
+                env.PIPELINE_TYPE = "FEATURE"
+                env.DEPLOY_ENV = "VALIDATION"
+            }
+            else {
 
                 error("Unsupported branch: ${env.BRANCH_NAME}")
 
             }
 
+
             echo """
             ============================
+            Pipeline Type: ${env.PIPELINE_TYPE}
             Branch: ${env.BRANCH_NAME}
             Environment: ${env.DEPLOY_ENV}
+            Change ID: ${env.CHANGE_ID}
             ============================
             """
 
@@ -88,49 +153,87 @@ stage('Detect Environment') {
 
 }
 
-stage('Validate Ansible Syntax') {
+stage('Install CI Dependencies') {
 
     steps {
 
-        script {
+        sh '''
+        python3 -m venv .ci-venv
 
-            def inventoryPath = env.DEPLOY_ENV.toLowerCase()
+        . .ci-venv/bin/activate
 
-            sshagent(['ansible-controller-key']) {
-
-                sh """
-                echo "\$VAULT_PASSWORD" > vault_pass.tmp
-                chmod 600 vault_pass.tmp
-
-                scp vault_pass.tmp ${ANSIBLE_CONTROLLER}:${ANSIBLE_DIR}/.vault_pass
-
-
-                ssh ${ANSIBLE_CONTROLLER} "
-                    cd ${ANSIBLE_DIR} &&
-                    ansible-playbook \
-                    -i inventories/${inventoryPath}/hosts \
-                    --syntax-check \
-                    site.yml
-                "
-
-
-                ssh ${ANSIBLE_CONTROLLER} "
-                    rm -f ${ANSIBLE_DIR}/.vault_pass
-                "
-
-
-                rm -f vault_pass.tmp
-                """
-
-            }
-
-        }
+        pip install --upgrade pip
+        pip install -r ci-requirements.txt
+        '''
 
     }
 
 }
 
-        stage('Sync Repository to Ansible Controller') {
+stage('YAML Lint') {
+
+    steps {
+
+        sh '''
+        . .ci-venv/bin/activate
+
+        yamllint .
+        '''
+
+    }
+
+}
+
+stage('Ansible Lint') {
+
+    steps {
+
+        sh '''
+        . .ci-venv/bin/activate
+
+        ansible-lint
+        '''
+
+    }
+
+}
+
+
+
+stage('PR Validation') {
+
+    when {
+        expression {
+            env.CHANGE_ID != null
+        }
+    }
+
+    steps {
+
+        echo "Running Pull Request validation only"
+
+        sh '''
+	. .ci-venv/bin/activate
+
+        ansible-playbook \
+        -i inventories/dev/hosts \
+        --syntax-check \
+        site.yml
+        '''
+
+    }
+
+}
+
+
+
+stage('Sync Repository to Ansible Controller') {
+
+        when {
+            expression {
+                return env.PIPELINE_TYPE == "BRANCH"
+            }
+        }
             steps {
                 sshagent(['ansible-controller-key']) {
                     sh '''
@@ -146,7 +249,13 @@ stage('Validate Ansible Syntax') {
         }
 
 
-        stage('Install Ansible Dependencies') {
+stage('Install Ansible Dependencies') {
+
+        when {
+            expression {
+                return env.PIPELINE_TYPE == "BRANCH"
+            }
+        }
             steps {
                 sshagent(['ansible-controller-key']) {
                     sh '''
@@ -159,13 +268,36 @@ stage('Validate Ansible Syntax') {
             }
         }
 
+stage('Validate Ansible Syntax') {
 
+	when {
+	    expression {
+	        return env.PIPELINE_TYPE == "BRANCH"
+	    }
+	}
+
+    steps {
+
+        script {
+
+            def inventoryPath = env.DEPLOY_ENV.toLowerCase()
+
+           runAnsiblePlaybook(
+	    inventoryPath,
+	    "--syntax-check"
+	)	 
+
+        }
+
+    }
+
+}
 
 stage('Approval to Deploy') {
 
     when {
         expression {
-            env.DEPLOY_ENV == 'PROD'
+            return env.DEPLOY_ENV == 'PROD'
         }
     }
 
@@ -218,40 +350,22 @@ Proceed with Ansible deployment?
 
 stage('Run Ansible Playbook') {
 
+    when {
+    	expression {
+        	return env.PIPELINE_TYPE == "BRANCH"
+    	}
+	}
+
     steps {
 
         script {
 
             def inventoryPath = env.DEPLOY_ENV.toLowerCase()
 
-            sshagent(['ansible-controller-key']) {
-
-                sh """
-                echo "\$VAULT_PASSWORD" > vault_pass.tmp
-                chmod 600 vault_pass.tmp
-
-                scp vault_pass.tmp ${ANSIBLE_CONTROLLER}:${ANSIBLE_DIR}/.vault_pass
-
-
-                ssh ${ANSIBLE_CONTROLLER} "
-                    cd ${ANSIBLE_DIR} &&
-                    ansible-playbook \
-		    -i inventories/${DEPLOY_ENV.toLowerCase()}/hosts \
-		    --vault-password-file .vault_pass \
-                    site.yml
-                "
-
-
-                ssh ${ANSIBLE_CONTROLLER} "
-                    rm -f ${ANSIBLE_DIR}/.vault_pass
-                "
-
-
-                rm -f vault_pass.tmp
-
-                """
-
-            }
+           runAnsiblePlaybook(
+    		inventoryPath,
+	    ""
+	) 
 
         }
 
@@ -270,6 +384,9 @@ success {
 
         env.BUILD_TIME = "${currentBuild.duration / 1000} seconds"
 	env.APPROVER_VALUE = env.APPROVER ?: "Not Required"
+	def notificationTitle = env.PIPELINE_TYPE == "PR" ?
+	    "✅ Jenkins Validation Successful" :
+	    "✅ Jenkins Deployment Successful"
 
         def payload = """
 {
@@ -286,7 +403,7 @@ success {
             "type": "TextBlock",
             "size": "Large",
             "weight": "Bolder",
-            "text": "✅ Jenkins Deployment Successful"
+	    "text": "${notificationTitle}"
           },
           {
             "type": "FactSet",
@@ -370,6 +487,9 @@ failure {
 
         env.BUILD_TIME = "${currentBuild.duration / 1000} seconds"
         env.APPROVER_VALUE = env.APPROVER ?: "Not Required"
+	def notificationTitle = env.PIPELINE_TYPE == "PR" ?
+	    "❌ Jenkins Validation Failed" :
+	    "❌ Jenkins Deployment Failed"
 
         def payload = """
 {
@@ -386,7 +506,7 @@ failure {
             "type": "TextBlock",
             "size": "Large",
             "weight": "Bolder",
-            "text": "❌ Jenkins Deployment Failed"
+	    "text": "${notificationTitle}"
           },
           {
             "type": "FactSet",

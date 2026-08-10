@@ -23,4 +23,3 @@
     - role: docker_compose
       tags:
         - docker_compose
-

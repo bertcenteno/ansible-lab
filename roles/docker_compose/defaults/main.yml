@@ -1,8 +1,7 @@
 ---
-compose_base_dir: /opt/compose
-compose_state: present
-compose_projects:
-
+docker_compose_base_dir: /opt/compose
+docker_compose_state: present
+docker_compose_projects:
   - name: nginx
     services:
       nginx:
@@ -41,13 +40,12 @@ compose_projects:
         networks: []
         command: ""
     volumes:
-      portainer_data: {} 
+      portainer_data: {}
 
   - name: mariadb
 
     volumes:
       mysql_data: {}
-
     services:
       mariadb:
         image: mariadb:latest
@@ -75,5 +73,4 @@ compose_projects:
           retries: 5
 
         networks: []
-
         command: ""

@@ -1,0 +1,27 @@
+---
+extends: default
+
+ignore: |
+  .ci-venv/
+  .venv/
+  .git/
+  roles/**/.travis.yml
+  inventories/**/vault.yml
+
+rules:
+  line-length:
+    max: 120
+
+  truthy: disable
+
+  comments:
+    min-spaces-from-content: 1
+
+  comments-indentation: disable
+
+  braces:
+    max-spaces-inside: 1
+
+  octal-values:
+    forbid-implicit-octal: true
+    forbid-explicit-octal: true
