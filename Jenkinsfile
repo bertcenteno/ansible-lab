@@ -120,13 +120,18 @@ stage('Detect Environment') {
                 env.DEPLOY_ENV = "DEV"
 
             }
+            else if (env.BRANCH_NAME.startsWith('release/')) {
+                env.PIPELINE_TYPE = "RELEASE"
+                env.DEPLOY_ENV = "VALIDATION"
+
+            }
             else if (env.BRANCH_NAME == 'main') {
 
                 env.PIPELINE_TYPE = "BRANCH"
                 env.DEPLOY_ENV = "PROD"
 
             }
-	    else if (env.BRANCH_NAME.startsWith('feature/')) {
+            else if (env.BRANCH_NAME.startsWith('feature/')) {
 
                 env.PIPELINE_TYPE = "FEATURE"
                 env.DEPLOY_ENV = "VALIDATION"
@@ -225,7 +230,29 @@ stage('PR Validation') {
 
 }
 
+stage('Release Validation') {
 
+    when {
+        expression {
+            return env.PIPELINE_TYPE == "RELEASE"
+        }
+    }
+
+    steps {
+
+        echo "Running Release Candidate validation"
+
+        sh '''
+        . .ci-venv/bin/activate
+
+        ansible-playbook \
+        -i inventories/dev/hosts \
+        --syntax-check \
+        site.yml
+        '''
+
+    }
+}
 
 stage('Sync Repository to Ansible Controller') {
 
