@@ -36,11 +36,7 @@
     name: "{{ docker_python_packages }}"
     state: present
 
-- name: Deploy Docker containers
+- name: Remove legacy standalone nginx container
   community.docker.docker_container:
-    name: "{{ item.name }}"
-    image: "{{ item.image }}"
-    state: started
-    restart_policy: unless-stopped
-    published_ports: "{{ item.published_ports | default(omit) }}"
-  loop: "{{ docker_containers }}"
+    name: nginx
+    state: absent
