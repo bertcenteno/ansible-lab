@@ -37,10 +37,16 @@ Production-style Ansible automation and CI/CD deployment lab built on Proxmox.
 - Deployment failure protection for unhealthy services
 - Environment-based inventory management
 - DEV and PROD environment separation
+- Dedicated DEV and PROD Docker hosts
+- Environment-specific application variables and Vault secrets
+- Controlled DEV-to-PROD promotion workflow
 - Jenkins Multibranch Pipeline integration
 - Branch-based environment detection
 - Automated DEV deployment workflow
 - Production deployment approval gate
+- Manual approval enforcement before PROD deployment
+- Docker Compose health verification with retry and wait handling
+- Docker engine and application deployment responsibility separation
 - CI/CD pipeline with YAML lint validation
 - CI/CD pipeline with Ansible lint validation
 - Ansible syntax validation before deployment
@@ -91,12 +97,12 @@ ansible-lab/
 ├── site.yml
 ├── Jenkinsfile
 └── README.md
-
-Environment Management
+```
+## Environment Management
 
 Separate inventories are maintained for DEV and PROD environments.
 
-DEV Environment
+### DEV Environment
 
 Inventory:
 
@@ -104,12 +110,13 @@ inventories/dev/hosts
 
 Features:
 
-Automatic deployment
-No approval required
-Uses DEV variables and secrets
-Deployment triggered automatically after changes are merged into develop
+- Managed host: `docker01`
+- Automatic deployment
+- No approval required
+- Uses DEV variables and Vault secrets
+- Deployment triggered automatically after changes are merged into `develop`
 
-PROD Environment
+### PROD Environment
 
 Inventory:
 
@@ -117,12 +124,20 @@ inventories/prod/hosts
 
 Features:
 
-Production deployment
-Manual approval required
-Uses PROD variables and secrets
-Deployment triggered from the main branch
+- Managed host: `docker-prod`
+- Production deployment
+- Manual approval required
+- Uses PROD variables and Vault secrets
+- Deployment triggered after changes are promoted to `main`
 
-Branching Strategy
+## Branching Strategy
+
+The `develop` and `main` branches are permanent branches in the deployment workflow.
+
+- `feature/*` branches contain individual changes.
+- `develop` represents the DEV environment and triggers automatic DEV deployment.
+- `main` represents the PROD environment and triggers the production deployment workflow.
+- Changes are promoted to PROD through a Pull Request from `develop` to `main`.
 
 The repository uses a feature branch → Pull Request → develop → main workflow.
 
@@ -251,34 +266,56 @@ Validate Ansible Syntax
 Run Ansible Playbook
 
 
-PROD Deployment
+## PROD Deployment
 
-Production deployments are triggered from the main branch.
-
+Feature Branch
+      |
+      v
 Pull Request
-     |
-     v
+      |
+      v
+PR Validation
+      |
+      v
 develop
-     |
-     v
-Validation
-     |
-     v
+      |
+      v
+Automatic DEV Deployment
+      |
+      v
+DEV Verification
+      |
+      v
+Pull Request
+develop -> main
+      |
+      v
+PR Validation
+      |
+      v
 Merge into main
-     |
-     v
-Jenkins Multibranch Pipeline
-     |
-     v
-Detect Environment
-     |
-     v
-Approval Gate
-     |
-     v
+      |
+      v
+Jenkins PROD Pipeline
+      |
+      v
+Manual Approval Gate
+      |
+      v
 PROD Deployment
+      |
+      v
+Post-Deployment Verification
+      |
+      v
+Deployment Successful
 
-Production deployment requires manual approval before the Ansible playbook is executed.
+Production changes are therefore tested through the DEV workflow before being promoted to `main`.
+
+The PROD deployment does not execute until the Jenkins manual approval gate is approved.
+
+The production workflow was verified using the dedicated `docker-prod` managed host.
+
 
 Jenkins Pipeline Features
 
@@ -361,6 +398,15 @@ mariadb
 
 If a required service is not running or does not report a healthy status, the Ansible playbook fails and Jenkins marks the deployment as failed.
 
+Container health verification includes retry and delay handling.
+
+This allows newly started containers to transition through temporary states such as:
+
+```text
+State: running
+Health: starting
+```
+
 HTTP Application Verification
 
 After container health verification succeeds, Ansible performs an HTTP request against:
@@ -409,7 +455,56 @@ Jenkins Deployment Failed
         v
 Microsoft Teams Failure Notification
 
-Deployment Commands
+## Docker Role Architecture
+
+Docker infrastructure provisioning and application deployment are separated between two Ansible roles.
+
+### Docker Role
+
+The `docker` role is responsible for:
+
+- Configuring the Docker CE repository
+- Installing Docker Engine
+- Installing Docker Compose
+- Starting and enabling the Docker service
+- Configuring Docker group membership
+- Installing required Docker Python dependencies
+- Removing the legacy standalone nginx container
+
+### Docker Compose Role
+
+The `docker_compose` role is responsible for application deployment:
+
+- nginx
+- MariaDB
+- Portainer
+- Docker Compose project deployment
+- Container running-state verification
+- Container health verification
+- nginx HTTP verification
+
+This separation prevents the Docker infrastructure role from independently deploying application containers.
+
+During v2.0, the previous standalone nginx container on port `80` was removed from both DEV and PROD. The Compose-managed nginx service remains available on port `8080`.
+
+Final nginx ownership:
+
+```text
+docker role
+    |
+    +-- Docker Engine provisioning
+    |
+    +-- Legacy nginx cleanup
+
+docker_compose role
+    |
+    +-- nginx :8080
+    +-- MariaDB
+    +-- Portainer
+    +-- Health verification
+```
+
+## Deployment Commands
 DEV Deployment
 ansible-playbook \
 -i inventories/dev/hosts \
@@ -425,49 +520,71 @@ ansible-playbook \
 -i inventories/dev/hosts \
 --syntax-check \
 site.yml
-CI/CD Deployment Flow
-                         GitHub
-                            |
-                +-----------+-----------+
-                |                       |
-             Push Event           Pull Request
-                |                       |
-                v                       v
-             Jenkins              PR Validation
-                |                       |
-                |                 +-----+-----+
-                |                 |           |
-                |              YAML Lint   Ansible Lint
-                |                 |           |
-                |                 +-----+-----+
-                |                       |
-                |                 Syntax Check
-                |                       |
-                |                    PASS
-                |                       |
-                |                  Merge to develop
-                |                       |
-                +-----------+-----------+
-                            |
-                            v
-                    Detect Environment
-                            |
-                     +------+------+
-                     |             |
-                    DEV           PROD
-                     |             |
-              Auto Deployment   Approval
-                     |             |
-              inventories/dev  inventories/prod
-                     |             |
-                     +------+------+
-                            |
-                            v
-                   Ansible Control Node
-                            |
-                            v
-                    Managed Servers
-Security
+
+## CI/CD Deployment Flow
+
+```text
+                    Feature Branch
+                          |
+                          v
+                    Pull Request
+                          |
+                          v
+                  Jenkins Validation
+                          |
+               +----------+----------+
+               |          |          |
+           YAML Lint  Ansible Lint  Syntax
+               |          |          |
+               +----------+----------+
+                          |
+                          v
+                       develop
+                          |
+                          v
+                Automatic DEV Deploy
+                          |
+                          v
+                       docker01
+                          |
+                          v
+                Deployment Verification
+                          |
+                          v
+                    DEV Successful
+                          |
+                          v
+                Pull Request to main
+                          |
+                          v
+                  Jenkins Validation
+                          |
+                          v
+                         main
+                          |
+                          v
+                 Manual Approval Gate
+                          |
+                          v
+                 Automatic PROD Deploy
+                          |
+                          v
+                     docker-prod
+                          |
+                          v
+                Deployment Verification
+                          |
+               +----------+----------+
+               |                     |
+          Container Health       HTTP 200
+               |                     |
+               +----------+----------+
+                          |
+                          v
+                   PROD Successful
+```
+
+## Security
 
 Secrets are managed using Ansible Vault.
 
@@ -476,9 +593,36 @@ Vault password files are removed after deployment
 Sensitive variables are stored in encrypted Vault files
 Production deployments require manual approval
 Deployment activities are logged through Jenkins and Teams notifications
-Version History
 
-v1.9
+## Version History
+
+### v2.0
+
+Production workflow and environment separation:
+
+- Added dedicated PROD Docker host
+- Separated DEV and PROD managed infrastructure
+- Added environment-specific DEV and PROD inventories
+- Added environment-specific application variables and Vault secrets
+- Implemented `develop` → `main` production promotion workflow
+- Verified Pull Request validation before production promotion
+- Verified automatic DEV deployment from `develop`
+- Verified manual approval gate before PROD deployment
+- Verified production deployment from `main`
+- Improved Docker Compose health verification with retry and delay handling
+- Added wait handling for containers transitioning through `health: starting`
+- Verified deployment failure when container health verification fails
+- Verified successful deployment after health-check retry refinement
+- Separated Docker engine provisioning from application deployment
+- Removed legacy standalone nginx deployment
+- Migrated nginx application ownership to Docker Compose
+- Verified legacy nginx cleanup in DEV and PROD
+- Verified DEV deployment idempotency
+- Verified nginx and MariaDB container health in PROD
+- Verified nginx HTTP 200 response after PROD deployment
+- Completed end-to-end feature → develop → DEV → main → approval → PROD workflow
+
+### v1.9
 
 Deployment verification improvements:
 
@@ -493,7 +637,7 @@ Deployment verification improvements:
 - Verified successful Pull Request validation
 - Verified PR merge → develop → DEV deployment with post-deployment verification
 
-v1.8
+### v1.8
 
 Pipeline quality and reliability improvements:
 
@@ -512,7 +656,7 @@ Verified Ansible lint failure protection
 Verified Ansible execution failure handling
 Verified successful PR validation → merge → develop → DEV deployment workflow
 
-v1.7
+### v1.7
 
 Jenkins CI/CD pipeline improvements:
 
@@ -524,10 +668,9 @@ Added Pull Request validation workflow
 Added GitHub Pull Request webhook automation
 Enabled automatic PR validation on changes
 Verified automatic DEV deployment after merging into develop
-v1.6
+
+### v1.6
 Added CI validation pipeline
 Added Jenkins validation workflow
 Added YAML and Ansible validation preparation
 Improved Jenkins Multibranch Pipeline workflow
-
-
