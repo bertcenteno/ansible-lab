@@ -7,5 +7,5 @@ all:
 
     dockerhosts:
       hosts:
-        docker01:
-          ansible_host: 172.26.8.63
+        docker-prod:
+          ansible_host: 172.26.8.65

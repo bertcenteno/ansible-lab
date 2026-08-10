@@ -35,6 +35,11 @@
     chdir: "{{ docker_compose_base_dir }}/{{ item }}"
   register: docker_compose_service_status
   changed_when: false
+  retries: 12
+  delay: 5
+  until:
+    - (docker_compose_service_status.stdout | from_json).State == "running"
+    - (docker_compose_service_status.stdout | from_json).Health == "healthy"
   loop:
     - nginx
     - mariadb
