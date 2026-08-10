@@ -1,5 +1,4 @@
 # Ansible Lab
-
 Production-style Ansible automation and CI/CD deployment lab built on Proxmox.
 
 ## Infrastructure
@@ -132,32 +131,54 @@ Features:
 
 ## Branching Strategy
 
-The `develop` and `main` branches are permanent branches in the deployment workflow.
+The `develop` and `main` branches are permanent branches in the deployment workflow. Release branches are temporary branches used to stabilize and validate release candidates before production promotion.
 
 - `feature/*` branches contain individual changes.
 - `develop` represents the DEV environment and triggers automatic DEV deployment.
+- `release/*` branches represent release candidates and perform validation without deployment.
 - `main` represents the PROD environment and triggers the production deployment workflow.
-- Changes are promoted to PROD through a Pull Request from `develop` to `main`.
+- Changes are promoted through Pull Requests between protected branches.
+- Completed releases are permanently identified using Git tags.
 
-The repository uses a feature branch → Pull Request → develop → main workflow.
+The repository uses a feature → develop → release → main workflow.
 
+```text
 feature/*
     |
     | Pull Request
     v
 develop
     |
-    | DEV Deployment
+    | Automatic DEV Deployment
+    v
+docker01
+    |
+    | Pull Request
+    v
+release/vX.Y
+    |
+    | Release Candidate Validation
+    | No Deployment
+    v
+Release Candidate
     |
     | Pull Request
     v
 main
     |
-    | Approval Gate
+    | Manual Approval Gate
     v
-PROD Deployment
+docker-prod
+    |
+    v
+Production Release
+    |
+    +-- Tag vX.Y
+    |
+    +-- Retire release/vX.Y
+```
 
-Feature Branches
+### Feature Branches
 
 Development work is performed using feature branches.
 
@@ -168,11 +189,11 @@ feature/v1.7-jenkinsfile-refactor
 Changes are submitted through a Pull Request targeting the develop branch.
 
 
-CI/CD Pipeline
+### CI/CD Pipeline
 
 The Jenkins Multibranch Pipeline automatically discovers branches and Pull Requests from GitHub.
 
-Pull Request Validation
+### Pull Request Validation
 
 When a Pull Request is created or updated, GitHub triggers Jenkins through a webhook.
 
@@ -209,7 +230,7 @@ Pull Request validation is isolated from deployment operations. PR builds do not
 
 The purpose of the PR pipeline is to verify that the proposed changes meet the repository's validation requirements before they are merged.
 
-GitHub Webhook
+### GitHub Webhook
 
 GitHub webhooks are used to automatically trigger Jenkins when repository events occur.
 
@@ -220,7 +241,7 @@ Pull Request events
 
 This allows Jenkins to automatically validate Pull Requests without requiring a manual repository scan.
 
-DEV Deployment
+### DEV Deployment
 
 After a Pull Request is successfully validated and merged into develop, Jenkins automatically starts the DEV deployment pipeline.
 
@@ -268,6 +289,7 @@ Run Ansible Playbook
 
 ## PROD Deployment
 
+```text
 Feature Branch
       |
       v
@@ -287,7 +309,17 @@ DEV Verification
       |
       v
 Pull Request
-develop -> main
+develop -> release/vX.Y
+      |
+      v
+Release Validation
+      |
+      v
+Release Candidate
+      |
+      v
+Pull Request
+release/vX.Y -> main
       |
       v
 PR Validation
@@ -309,15 +341,25 @@ Post-Deployment Verification
       |
       v
 Deployment Successful
+      |
+      v
+Tag Production Commit
+      |
+      v
+Retire Release Branch
+```
 
-Production changes are therefore tested through the DEV workflow before being promoted to `main`.
+Production changes are tested through the DEV workflow and validated as a release candidate before being promoted to `main`.
 
 The PROD deployment does not execute until the Jenkins manual approval gate is approved.
 
 The production workflow was verified using the dedicated `docker-prod` managed host.
 
+Release branches do not deploy infrastructure. They provide a dedicated validation stage between DEV and PROD.
 
-Jenkins Pipeline Features
+After a successful production deployment, the production commit on `main` is tagged with the release version. The completed release branch can then be retired.
+
+### Jenkins Pipeline Features
 
 The Jenkins pipeline provides:
 
@@ -346,8 +388,12 @@ Environment-aware validation and deployment notifications
 Post-deployment Docker Compose health verification
 Post-deployment HTTP application verification
 Deployment failure on failed post-deployment verification
+Release branch discovery
+Release candidate validation
+Release-only validation without deployment
+Protected develop / release / main promotion workflow
 
-Jenkins Ansible Execution
+### Jenkins Ansible Execution
 
 The Jenkinsfile uses a reusable helper closure for Ansible execution.
 
@@ -367,7 +413,7 @@ Vault password cleanup is executed even when Ansible execution fails.
 
 This reduces duplicated Jenkins pipeline code between DEV and PROD deployment stages.
 
-Deployment Verification
+### Deployment Verification
 
 After Docker Compose projects are deployed, Ansible performs post-deployment verification before the Jenkins deployment is considered successful.
 
@@ -380,7 +426,7 @@ MariaDB container running state
 MariaDB container health status
 nginx HTTP application response
 
-Container Verification
+### Container Verification
 
 Docker Compose service information is collected using:
 
@@ -554,7 +600,19 @@ site.yml
                     DEV Successful
                           |
                           v
-                Pull Request to main
+               Pull Request to release
+                          |
+                          v
+                    release/vX.Y
+                          |
+                          v
+                 Release Validation
+                          |
+                          v
+                  Release Candidate
+                          |
+                          v
+                 Pull Request to main
                           |
                           v
                   Jenkins Validation
@@ -582,6 +640,12 @@ site.yml
                           |
                           v
                    PROD Successful
+                          |
+                          v
+                       Tag vX.Y
+                          |
+                          v
+                 Retire Release Branch
 ```
 
 ## Security
@@ -595,6 +659,31 @@ Production deployments require manual approval
 Deployment activities are logged through Jenkins and Teams notifications
 
 ## Version History
+
+### v2.1
+
+Release branch workflow and protected promotion lifecycle:
+
+- Added support for `release/*` branches in the Jenkins Multibranch Pipeline
+- Added dedicated `RELEASE` pipeline type
+- Added release candidate validation using the `VALIDATION` environment
+- Added dedicated Release Validation stage
+- Release branches perform YAML lint, Ansible lint, and Ansible syntax validation without deployment
+- Implemented `develop` → `release/*` → `main` promotion workflow
+- Verified feature → Pull Request → develop → DEV deployment workflow
+- Verified develop → release Pull Request validation
+- Verified successful `release/v2.1` release candidate validation
+- Verified release → main Pull Request validation
+- Verified manual approval before production deployment
+- Verified successful v2.1 production deployment to `docker-prod`
+- Added branch protection for `develop`, `release/*`, and `main`
+- Verified direct pushes are rejected on protected branches
+- Verified protected release branches cannot be deleted without authorized ruleset changes
+- Added annotated production release tag `v2.1`
+- Verified `v2.1` tag points to the production commit on `main`
+- Added completed release branch retirement workflow
+- Verified `main`, `release/v2.1`, and `develop` contained identical release content after promotion
+- Completed end-to-end feature → develop → DEV → release → validation → main → approval → PROD → tag workflow
 
 ### v2.0
 
@@ -674,6 +763,3 @@ Added CI validation pipeline
 Added Jenkins validation workflow
 Added YAML and Ansible validation preparation
 Improved Jenkins Multibranch Pipeline workflow
-
-
-### TEST
