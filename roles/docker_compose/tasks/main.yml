@@ -10,6 +10,46 @@
   loop_control:
     label: "{{ item.name }}"
 
+- name: Create known-good backup directory
+  ansible.builtin.file:
+    path: "{{ docker_compose_backup_dir }}"
+    state: directory
+    owner: root
+    group: root
+    mode: "0700"
+
+- name: Check known-good compose files
+  ansible.builtin.stat:
+    path: "{{ docker_compose_backup_dir }}/{{ item.name }}/docker-compose.yml"
+  register: docker_compose_known_good_files
+  loop: "{{ docker_compose_projects }}"
+  loop_control:
+    label: "{{ item.name }}"
+
+- name: Create known-good project directories
+  ansible.builtin.file:
+    path: "{{ docker_compose_backup_dir }}/{{ item.name }}"
+    state: directory
+    owner: root
+    group: root
+    mode: "0700"
+  loop: "{{ docker_compose_projects }}"
+  loop_control:
+    label: "{{ item.name }}"
+
+- name: Bootstrap known-good compose files
+  ansible.builtin.copy:
+    src: "{{ docker_compose_base_dir }}/{{ item.item.name }}/docker-compose.yml"
+    dest: "{{ docker_compose_backup_dir }}/{{ item.item.name }}/docker-compose.yml"
+    owner: root
+    group: root
+    mode: "0600"
+    remote_src: true
+  when: not item.stat.exists
+  loop: "{{ docker_compose_known_good_files.results }}"
+  loop_control:
+    label: "{{ item.item.name }}"
+
 - name: Deploy docker-compose.yml files
   ansible.builtin.template:
     src: docker-compose.yml.j2
@@ -68,3 +108,15 @@
   retries: 5
   delay: 5
   until: docker_compose_nginx_http_check.status == 200
+
+- name: Promote verified compose files to known-good
+  ansible.builtin.copy:
+    src: "{{ docker_compose_base_dir }}/{{ item.name }}/docker-compose.yml"
+    dest: "{{ docker_compose_backup_dir }}/{{ item.name }}/docker-compose.yml"
+    owner: root
+    group: root
+    mode: "0600"
+    remote_src: true
+  loop: "{{ docker_compose_projects }}"
+  loop_control:
+    label: "{{ item.name }}"

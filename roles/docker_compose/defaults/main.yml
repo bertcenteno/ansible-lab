@@ -4,6 +4,7 @@ docker_compose_mariadb_image: "mariadb:12.3.2"
 docker_compose_portainer_image: "portainer/portainer-ce:2.39.5"
 
 docker_compose_base_dir: /opt/compose
+docker_compose_backup_dir: /opt/compose/.known-good
 docker_compose_state: present
 docker_compose_projects:
   - name: nginx
