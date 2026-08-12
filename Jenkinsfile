@@ -7,6 +7,13 @@ def runAnsiblePlaybook = { String inventoryPath, String extraArgs ->
             "EXTRA_ARGS=${extraArgs}"
         ]) {
 
+            if (!extraArgs) {
+                sh """
+                    ssh ${ANSIBLE_CONTROLLER} 'rm -f /home/ansible/.ansible-rollback-status'
+                """
+                env.ROLLBACK_STATUS = "NOT_REQUIRED"
+            }
+
             def exitCode = sh(
                 script: '''
                     set -e
@@ -19,27 +26,44 @@ def runAnsiblePlaybook = { String inventoryPath, String extraArgs ->
                     scp vault_pass.tmp ${ANSIBLE_CONTROLLER}:${ANSIBLE_DIR}/.vault_pass
 
                     ssh ${ANSIBLE_CONTROLLER} "
-                        trap 'rm -f ${ANSIBLE_DIR}/.vault_pass' EXIT
-                        cd ${ANSIBLE_DIR} &&
-                        ansible-playbook \
-                        -i inventories/${INVENTORY_PATH}/hosts \
-                        ${EXTRA_ARGS} \
-                        --vault-password-file .vault_pass \
-                        site.yml
+                        trap 'rm -f ${ANSIBLE_DIR}/.vault_pass /home/ansible/.ansible-rollback-status' EXIT
 
+                        cd ${ANSIBLE_DIR}
+
+                        if ansible-playbook \
+                            -i inventories/${INVENTORY_PATH}/hosts \
+                            ${EXTRA_ARGS} \
+                            --vault-password-file .vault_pass \
+                            site.yml; then
+
+                            exit 0
+                        else
+                            if [ -f /home/ansible/.ansible-rollback-status ] && \
+                              grep -qx 'SUCCESS' /home/ansible/.ansible-rollback-status; then
+                                exit 42
+                            else
+                                exit 1
+                            fi
+                        fi
                     "
                 ''',
                 returnStatus: true
             )
-		if (exitCode != 0) {
-		    error("""
-		Ansible execution failed
-		Environment: ${env.DEPLOY_ENV}
-		Inventory: ${inventoryPath}
-		Arguments: ${extraArgs ?: 'None'}
-		Exit Code: ${exitCode}
-		""".stripIndent().trim())
-		}
+
+            if (exitCode == 42) {
+                env.ROLLBACK_STATUS = "SUCCESS"
+                echo "Rollback Status: ${env.ROLLBACK_STATUS}"
+            }
+
+            if (exitCode != 0) {
+                error("""
+                Ansible execution failed
+                Environment: ${env.DEPLOY_ENV}
+                Inventory: ${inventoryPath}
+                Arguments: ${extraArgs ?: 'None'}
+                Exit Code: ${exitCode}
+                """.stripIndent().trim())
+            }
         }
     }
 }
@@ -514,6 +538,17 @@ failure {
 
         env.BUILD_TIME = "${currentBuild.duration / 1000} seconds"
         env.APPROVER_VALUE = env.APPROVER ?: "Not Required"
+
+        def rollbackDisplay = env.ROLLBACK_STATUS ?: "NOT_REQUIRED"
+
+        if (rollbackDisplay == "SUCCESS") {
+            rollbackDisplay = "SUCCESSFUL - Last known-good configuration restored"
+        }
+        else {
+            rollbackDisplay = "Not Required"
+        }
+
+
 	def notificationTitle = env.PIPELINE_TYPE == "PR" ?
 	    "❌ Jenkins Validation Failed" :
 	    "❌ Jenkins Deployment Failed"
@@ -553,6 +588,10 @@ failure {
               {
                 "title": "Status",
                 "value": "FAILED"
+              },
+              {
+              "title": "Rollback",
+              "value": "${rollbackDisplay}"
               },
               {
                 "title": "Repository",

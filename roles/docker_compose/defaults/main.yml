@@ -1,11 +1,16 @@
 ---
+docker_compose_nginx_image: "nginx:1.31.3"
+docker_compose_mariadb_image: "mariadb:12.3.2"
+docker_compose_portainer_image: "portainer/portainer-ce:2.39.5"
+
 docker_compose_base_dir: /opt/compose
+docker_compose_backup_dir: /opt/compose/.known-good
 docker_compose_state: present
 docker_compose_projects:
   - name: nginx
     services:
       nginx:
-        image: nginx:latest
+        image: "{{ docker_compose_nginx_image }}"
         restart: unless-stopped
         ports:
           - "8080:80"
@@ -29,7 +34,7 @@ docker_compose_projects:
   - name: portainer
     services:
       portainer:
-        image: portainer/portainer-ce:latest
+        image: "{{ docker_compose_portainer_image }}"
         restart: unless-stopped
         ports:
           - "9000:9000"
@@ -48,7 +53,7 @@ docker_compose_projects:
       mysql_data: {}
     services:
       mariadb:
-        image: mariadb:latest
+        image: "{{ docker_compose_mariadb_image }}"
 
         restart: unless-stopped
 
