@@ -180,6 +180,18 @@
           Rollback completed successfully.
           The last known-good Docker Compose configuration has been restored.
 
+    - name: Debug rollback status execution context
+      ansible.builtin.command:
+        cmd: sh -c 'echo "HOST=$(hostname) USER=$(whoami) HOME=$HOME PWD=$(pwd)"'
+      register: docker_compose_rollback_debug_context
+      changed_when: false
+      delegate_to: localhost
+      become: false
+
+    - name: Show rollback status execution context
+      ansible.builtin.debug:
+        var: docker_compose_rollback_debug_context.stdout
+
     - name: Record successful rollback status
       ansible.builtin.copy:
         content: "SUCCESS\n"
