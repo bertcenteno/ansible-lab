@@ -50,8 +50,6 @@ def runAnsiblePlaybook = { String inventoryPath, String extraArgs ->
                 returnStatus: true
             )
 
-            echo "DEBUG exitCode=${exitCode}, type=${exitCode.getClass().getName()}"
-
             if (exitCode == 42) {
                 env.ROLLBACK_STATUS = "SUCCESS"
                 echo "Rollback Status: ${env.ROLLBACK_STATUS}"
@@ -86,7 +84,6 @@ pipeline {
         ANSIBLE_DIR = "/home/ansible/ansible-lab"
         VAULT_PASSWORD = credentials('ansible-vault-password')
         TEAMS_WEBHOOK = credentials('teams-webhook-url')
-        ROLLBACK_STATUS = "NOT_REQUIRED"
     }
 
     stages {
