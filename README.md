@@ -501,6 +501,75 @@ Jenkins Deployment Failed
         v
 Microsoft Teams Failure Notification
 
+### Automatic Deployment Rollback
+
+The `docker_compose` role protects the deployed applications using a last known-good configuration.
+
+Verified Docker Compose configurations are stored on the managed Docker host under:
+
+```text
+/opt/compose/.known-good/
+```
+
+Each Docker Compose project maintains its own known-good configuration:
+
+```text
+/opt/compose/.known-good/nginx/docker-compose.yml
+/opt/compose/.known-good/mariadb/docker-compose.yml
+/opt/compose/.known-good/portainer/docker-compose.yml
+```
+
+After a deployment passes container and HTTP verification, the active Compose files are promoted to the known-good state.
+
+If deployment or verification fails, the Ansible rescue workflow:
+
+1. Detects the deployment failure.
+2. Restores the last known-good Compose files.
+3. Redeploys the known-good Docker Compose projects.
+4. Verifies the restored service state.
+5. Verifies the nginx HTTP response.
+6. Records successful rollback status for Jenkins.
+
+```text
+Docker Compose Deployment
+        |
+        v
+Deployment Verification
+        |
+   +----+----+
+   |         |
+ PASS       FAIL
+   |         |
+   v         v
+Promote    Ansible Rescue
+to         |
+Known-Good v
+           Restore Known-Good
+           Compose Files
+                |
+                v
+           Redeploy Services
+                |
+                v
+           Verify Containers
+                |
+                v
+           Verify nginx HTTP 200
+                |
+                v
+           Rollback Successful
+```
+
+A successful rollback does not convert the failed deployment into a successful Jenkins build. The original deployment remains failed while Jenkins records that service recovery completed successfully.
+
+Microsoft Teams failure notifications report the rollback result as:
+
+```text
+Rollback: SUCCESSFUL - Last known-good configuration restored
+```
+
+This allows the pipeline to distinguish between a failed deployment where service recovery succeeded and a deployment failure where no rollback was required.
+
 ## Docker Role Architecture
 
 Docker infrastructure provisioning and application deployment are separated between two Ansible roles.
@@ -659,6 +728,27 @@ Production deployments require manual approval
 Deployment activities are logged through Jenkins and Teams notifications
 
 ## Version History
+
+### v2.2
+
+Automatic deployment rollback and rollback observability:
+
+- Added last known-good Docker Compose configuration management
+- Added automatic promotion of verified Compose configurations to known-good state
+- Added Ansible rescue workflow for failed Docker Compose deployments
+- Added automatic restoration and redeployment of known-good configurations
+- Added post-rollback container state verification
+- Added post-rollback nginx HTTP verification
+- Added Jenkins rollback status propagation
+- Added dedicated rollback exit-code handling between Ansible and Jenkins
+- Added Microsoft Teams rollback status reporting
+- Verified failed deployment remains failed after successful service recovery
+- Verified successful rollback restores `nginx:1.31.3`
+- Verified restored nginx container reports `running` and `healthy`
+- Verified restored nginx application returns HTTP 200
+- Verified active Compose files match the saved known-good configurations after rollback
+- Verified successful recovery deployment after restoring the valid nginx image
+- Verified recovery deployment is idempotent with `changed=0`, `failed=0`, and `rescued=0`
 
 ### v2.1
 
