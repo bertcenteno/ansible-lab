@@ -183,7 +183,7 @@
     - name: Record successful rollback status
       ansible.builtin.copy:
         content: "SUCCESS\n"
-        dest: /tmp/ansible-rollback-status
+        dest: /home/ansible/.ansible-rollback-status
         mode: "0600"
       delegate_to: localhost
       become: false
