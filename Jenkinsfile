@@ -9,7 +9,7 @@ def runAnsiblePlaybook = { String inventoryPath, String extraArgs ->
 
             if (!extraArgs) {
                 sh """
-                    ssh ${ANSIBLE_CONTROLLER} 'rm -f /tmp/ansible-rollback-status'
+                    ssh ${ANSIBLE_CONTROLLER} 'rm -f /home/ansible/.ansible-rollback-status'
                 """
                 env.ROLLBACK_STATUS = "NOT_REQUIRED"
             }
@@ -42,7 +42,7 @@ def runAnsiblePlaybook = { String inventoryPath, String extraArgs ->
                 def rollbackStatus = sh(
                     script: """
                         ssh ${ANSIBLE_CONTROLLER} \
-                        'cat /tmp/ansible-rollback-status 2>/dev/null || echo NOT_REQUIRED'
+                        'cat /home/ansible/.ansible-rollback-status 2>/dev/null || echo NOT_REQUIRED'
                     """,
                     returnStdout: true
                 ).trim()
