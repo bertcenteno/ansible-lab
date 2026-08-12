@@ -26,28 +26,31 @@ def runAnsiblePlaybook = { String inventoryPath, String extraArgs ->
                     scp vault_pass.tmp ${ANSIBLE_CONTROLLER}:${ANSIBLE_DIR}/.vault_pass
 
                     ssh ${ANSIBLE_CONTROLLER} "
-                        trap 'rm -f ${ANSIBLE_DIR}/.vault_pass' EXIT
-                        cd ${ANSIBLE_DIR} &&
+                        trap 'rm -f ${ANSIBLE_DIR}/.vault_pass /home/ansible/.ansible-rollback-status' EXIT
+
+                        cd ${ANSIBLE_DIR}
+
                         ansible-playbook \
                         -i inventories/${INVENTORY_PATH}/hosts \
                         ${EXTRA_ARGS} \
                         --vault-password-file .vault_pass \
                         site.yml
 
+                        ansible_rc=\$?
+
+                        if [ \${ansible_rc} -ne 0 ] && \
+                          [ -f /home/ansible/.ansible-rollback-status ] && \
+                          grep -qx 'SUCCESS' /home/ansible/.ansible-rollback-status; then
+                            exit 42
+                        fi
+
+                        exit \${ansible_rc}
                     "
                 ''',
                 returnStatus: true
             )
-            if (!extraArgs) {
-                def rollbackStatus = sh(
-                    script: """
-                        ssh ${ANSIBLE_CONTROLLER} \
-                        'cat /home/ansible/.ansible-rollback-status 2>/dev/null || echo NOT_REQUIRED'
-                    """,
-                    returnStdout: true
-                ).trim()
-
-                env.ROLLBACK_STATUS = rollbackStatus
+            if (!extraArgs && exitCode == 42) {
+                env.ROLLBACK_STATUS = "SUCCESS"
                 echo "Rollback Status: ${env.ROLLBACK_STATUS}"
             }
 
