@@ -1,5 +1,5 @@
 ---
-docker_compose_nginx_image: "nginx:1.31.3"
+docker_compose_nginx_image: "nginx:v2.2-rollback-observability-test-invalid"
 docker_compose_mariadb_image: "mariadb:12.3.2"
 docker_compose_portainer_image: "portainer/portainer-ce:2.39.5"
 
