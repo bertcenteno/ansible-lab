@@ -7,6 +7,13 @@ def runAnsiblePlaybook = { String inventoryPath, String extraArgs ->
             "EXTRA_ARGS=${extraArgs}"
         ]) {
 
+            if (!extraArgs) {
+                sh """
+                    ssh ${ANSIBLE_CONTROLLER} 'rm -f /tmp/ansible-rollback-status'
+                """
+                env.ROLLBACK_STATUS = "NOT_REQUIRED"
+            }
+
             def exitCode = sh(
                 script: '''
                     set -e
@@ -31,15 +38,28 @@ def runAnsiblePlaybook = { String inventoryPath, String extraArgs ->
                 ''',
                 returnStatus: true
             )
-		if (exitCode != 0) {
-		    error("""
-		Ansible execution failed
-		Environment: ${env.DEPLOY_ENV}
-		Inventory: ${inventoryPath}
-		Arguments: ${extraArgs ?: 'None'}
-		Exit Code: ${exitCode}
-		""".stripIndent().trim())
-		}
+            if (!extraArgs) {
+                def rollbackStatus = sh(
+                    script: """
+                        ssh ${ANSIBLE_CONTROLLER} \
+                        'cat /tmp/ansible-rollback-status 2>/dev/null || echo NOT_REQUIRED'
+                    """,
+                    returnStdout: true
+                ).trim()
+
+                env.ROLLBACK_STATUS = rollbackStatus
+                echo "Rollback Status: ${env.ROLLBACK_STATUS}"
+            }
+
+            if (exitCode != 0) {
+                error("""
+                Ansible execution failed
+                Environment: ${env.DEPLOY_ENV}
+                Inventory: ${inventoryPath}
+                Arguments: ${extraArgs ?: 'None'}
+                Exit Code: ${exitCode}
+                """.stripIndent().trim())
+            }
         }
     }
 }
@@ -60,6 +80,7 @@ pipeline {
         ANSIBLE_DIR = "/home/ansible/ansible-lab"
         VAULT_PASSWORD = credentials('ansible-vault-password')
         TEAMS_WEBHOOK = credentials('teams-webhook-url')
+        ROLLBACK_STATUS = "NOT_REQUIRED"
     }
 
     stages {
@@ -514,6 +535,17 @@ failure {
 
         env.BUILD_TIME = "${currentBuild.duration / 1000} seconds"
         env.APPROVER_VALUE = env.APPROVER ?: "Not Required"
+
+        def rollbackDisplay = env.ROLLBACK_STATUS ?: "NOT_REQUIRED"
+
+        if (rollbackDisplay == "SUCCESS") {
+            rollbackDisplay = "SUCCESSFUL - Last known-good configuration restored"
+        }
+        else {
+            rollbackDisplay = "Not Required"
+        }
+
+
 	def notificationTitle = env.PIPELINE_TYPE == "PR" ?
 	    "❌ Jenkins Validation Failed" :
 	    "❌ Jenkins Deployment Failed"
@@ -553,6 +585,10 @@ failure {
               {
                 "title": "Status",
                 "value": "FAILED"
+              },
+              {
+              "title": "Rollback",
+              "value": "${rollbackDisplay}"
               },
               {
                 "title": "Repository",
