@@ -49,7 +49,7 @@ def runAnsiblePlaybook = { String inventoryPath, String extraArgs ->
                 ''',
                 returnStatus: true
             )
-            if (!extraArgs && exitCode == 42) {
+            if (exitCode == 42) {
                 env.ROLLBACK_STATUS = "SUCCESS"
                 echo "Rollback Status: ${env.ROLLBACK_STATUS}"
             }
