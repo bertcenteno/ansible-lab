@@ -186,6 +186,7 @@
         dest: /tmp/ansible-rollback-status
         mode: "0600"
       delegate_to: localhost
+      become: false
 
     - name: Fail deployment after successful rollback
       ansible.builtin.fail:
