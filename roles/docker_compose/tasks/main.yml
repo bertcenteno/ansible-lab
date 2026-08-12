@@ -180,6 +180,13 @@
           Rollback completed successfully.
           The last known-good Docker Compose configuration has been restored.
 
+    - name: Record successful rollback status
+      ansible.builtin.copy:
+        content: "SUCCESS\n"
+        dest: /tmp/ansible-rollback-status
+        mode: "0600"
+      delegate_to: localhost
+
     - name: Fail deployment after successful rollback
       ansible.builtin.fail:
         msg: >-
