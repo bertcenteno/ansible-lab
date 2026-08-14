@@ -344,6 +344,40 @@ stage('Validate Ansible Syntax') {
 
 }
 
+stage('Deployment Preview') {
+
+    when {
+        expression {
+            return env.PIPELINE_TYPE == "BRANCH"
+        }
+    }
+
+    steps {
+
+        script {
+
+            def inventoryPath = env.DEPLOY_ENV.toLowerCase()
+
+            echo """
+            ============================
+            Deployment Preview
+            Environment: ${env.DEPLOY_ENV}
+            Inventory: ${inventoryPath}
+            Mode: CHECK + DIFF
+            ============================
+            """
+
+            runAnsiblePlaybook(
+                inventoryPath,
+                "--check --diff"
+            )
+
+        }
+
+    }
+
+}
+
 stage('Approval to Deploy') {
 
     when {
