@@ -75,7 +75,7 @@
       ansible.builtin.command:
         cmd: docker compose ps --format json
         chdir: "{{ docker_compose_base_dir }}/{{ item }}"
-      check_mode: false  
+      check_mode: false
       register: docker_compose_service_status
       changed_when: false
       retries: 12
@@ -107,7 +107,7 @@
         url: http://localhost:8080
         method: GET
         status_code: 200
-      check_mode: false  
+      check_mode: false
       register: docker_compose_nginx_http_check
       retries: 5
       delay: 5
