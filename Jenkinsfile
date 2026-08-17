@@ -280,52 +280,57 @@ stage('Release Validation') {
 
 stage('Sync Repository to Ansible Controller') {
 
-        when {
-            expression {
-                return env.PIPELINE_TYPE == "BRANCH"
-            }
+    when {
+        expression {
+            return env.PIPELINE_TYPE == "BRANCH" ||
+                   env.PIPELINE_TYPE == "PR"
         }
-            steps {
-                sshagent(['ansible-controller-key']) {
-                    sh '''
-                    rsync -avz --delete \
-                    --exclude ".git" \
-                    --exclude ".gitignore" \
-                    --exclude "Jenkinsfile" \
-                    ./ \
-                    ${ANSIBLE_CONTROLLER}:${ANSIBLE_DIR}/
-                    '''
-                }
-            }
+    }
+
+    steps {
+        sshagent(['ansible-controller-key']) {
+            sh '''
+            rsync -avz --delete \
+            --exclude ".git" \
+            --exclude ".gitignore" \
+            --exclude "Jenkinsfile" \
+            ./ \
+            ${ANSIBLE_CONTROLLER}:${ANSIBLE_DIR}/
+            '''
         }
+    }
+}
 
 
 stage('Install Ansible Dependencies') {
 
-        when {
-            expression {
-                return env.PIPELINE_TYPE == "BRANCH"
-            }
+    when {
+        expression {
+            return env.PIPELINE_TYPE == "BRANCH" ||
+                   env.PIPELINE_TYPE == "PR"
         }
-            steps {
-                sshagent(['ansible-controller-key']) {
-                    sh '''
-                    ssh ${ANSIBLE_CONTROLLER} "
-                    cd ${ANSIBLE_DIR} &&
-                    ansible-galaxy collection install -r requirements.yml
-                    "
-                    '''
-                }
-            }
+    }
+
+    steps {
+        sshagent(['ansible-controller-key']) {
+            sh '''
+            ssh ${ANSIBLE_CONTROLLER} "
+            cd ${ANSIBLE_DIR} &&
+            ansible-galaxy collection install -r requirements.yml
+            "
+            '''
         }
+    }
+}
 
 stage('Validate Ansible Syntax') {
 
-	when {
-	    expression {
-	        return env.PIPELINE_TYPE == "BRANCH"
-	    }
-	}
+    when {
+        expression {
+            return env.PIPELINE_TYPE == "BRANCH" ||
+                   env.PIPELINE_TYPE == "PR"
+        }
+    }
 
     steps {
 
