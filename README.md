@@ -60,6 +60,13 @@ Production-style Ansible automation and CI/CD deployment lab built on Proxmox.
 - Consistent CI virtual environment for PR validation
 - Environment-aware Microsoft Teams validation and deployment notifications
 - CI failure protection for YAML and Ansible lint violations
+- Ansible deployment preview using check mode and diff mode
+- Jenkins Deployment Preview stage before deployment execution
+- Pull Request deployment preview validation
+- PR preview synchronization to Ansible controller without deployment execution
+- DEV inventory preview execution for Pull Requests
+- Protected PR workflow preventing deployment execution from Pull Requests
+- Pre-deployment change visibility using Ansible --check and --diff
 
 ---
 
@@ -200,33 +207,81 @@ When a Pull Request is created or updated, GitHub triggers Jenkins through a web
 The PR validation workflow performs:
 
 GitHub Pull Request
+
         |
+
         v
+
 Jenkins Multibranch Pipeline
+
         |
+
         v
+
 Checkout SCM
+
         |
+
         v
+
 Install CI Dependencies
+
         |
+
         v
+
 YAML Lint
+
         |
+
         v
+
 Ansible Lint
+
         |
+
         v
+
 PR Syntax Validation
-(.ci-venv)
+
         |
+
         v
+
+Sync Repository to Ansible Controller
+
+        |
+
+        v
+
+Install Ansible Dependencies
+
+        |
+
+        v
+
+Deployment Preview
+
+        |
+
+        v
+
+Ansible --check --diff
+
+        |
+
+        v
+
 PASS
+
         |
+
         v
+
 GitHub Check: Green
 
-Pull Request validation is isolated from deployment operations. PR builds do not synchronize files to the Ansible controller, install dependencies on the controller, request deployment approval, or execute a deployment.
+Pull Request validation performs repository validation and deployment preview without executing an actual deployment.
+
 
 The purpose of the PR pipeline is to verify that the proposed changes meet the repository's validation requirements before they are merged.
 
@@ -276,14 +331,25 @@ No approval is required for DEV deployments.
 Branch deployment order:
 
 Sync Repository to Ansible Controller
+
         |
         v
+
 Install Ansible Dependencies
+
         |
         v
+
 Validate Ansible Syntax
+
         |
         v
+
+Deployment Preview
+
+        |
+        v
+
 Run Ansible Playbook
 
 
@@ -392,6 +458,12 @@ Release branch discovery
 Release candidate validation
 Release-only validation without deployment
 Protected develop / release / main promotion workflow
+Deployment Preview stage
+PR deployment preview validation
+Ansible check mode execution
+Ansible diff mode execution
+PR-safe synchronization to Ansible controller
+Deployment execution restricted to branch pipelines
 
 ### Jenkins Ansible Execution
 
@@ -728,6 +800,40 @@ Production deployments require manual approval
 Deployment activities are logged through Jenkins and Teams notifications
 
 ## Version History
+
+### v2.3
+
+Deployment Preview workflow and pre-deployment change visibility:
+
+- Added Jenkins Deployment Preview stage using Ansible check mode and diff mode
+
+- Added Pull Request deployment preview workflow
+
+- Added PR synchronization to Ansible controller for preview execution
+
+- Added DEV inventory preview execution for Pull Requests
+
+- Restricted Pull Request pipelines from executing deployments
+
+- Added pre-deployment change visibility before applying infrastructure changes
+
+- Updated Docker Compose verification tasks to support Ansible check mode execution
+
+- Verified deployment preview with no configuration changes:
+  - changed=0
+  - failed=0
+
+- Verified deployment preview with intentional configuration changes:
+  - changed=1
+  - failed=0
+
+- Verified preview mode does not modify the target environment
+
+- Verified develop branch deployment workflow:
+  - Deployment Preview
+  - Actual DEV Deployment
+
+- Verified accidental preview test merge recovery using Pull Request revert workflow
 
 ### v2.2
 
