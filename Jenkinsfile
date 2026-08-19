@@ -344,6 +344,48 @@ stage('Validate Ansible Syntax') {
 
 }
 
+stage('Deployment Preview') {
+
+    when {
+        expression {
+            return env.PIPELINE_TYPE == "PR" ||
+                   env.PIPELINE_TYPE == "BRANCH"
+        }
+    }
+
+    steps {
+
+        script {
+
+            def inventoryPath
+
+            if (env.PIPELINE_TYPE == "PR") {
+                inventoryPath = "dev"
+            } else {
+                inventoryPath = env.DEPLOY_ENV.toLowerCase()
+            }
+
+            echo """
+            ============================
+            Deployment Preview
+            Pipeline Type: ${env.PIPELINE_TYPE}
+            Environment: ${env.DEPLOY_ENV}
+            Inventory: ${inventoryPath}
+            Mode: CHECK + DIFF
+            ============================
+            """
+
+            runAnsiblePlaybook(
+                inventoryPath,
+                "--check --diff"
+            )
+
+        }
+
+    }
+
+}
+
 stage('Approval to Deploy') {
 
     when {
