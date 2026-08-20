@@ -1,0 +1,65 @@
+---
+- name: Verify
+  hosts: all
+  become: true
+
+  tasks:
+
+    - name: Check nginx container
+      community.docker.docker_container_info:
+        name: nginx-nginx-1
+      register: nginx_info
+
+
+    - name: Check portainer container
+      community.docker.docker_container_info:
+        name: portainer-portainer-1
+      register: portainer_info
+
+
+    - name: Check mariadb container
+      community.docker.docker_container_info:
+        name: mariadb-mariadb-1
+      register: mariadb_info
+
+
+    - name: Validate containers exist
+      ansible.builtin.assert:
+        that:
+          - nginx_info.exists
+          - portainer_info.exists
+          - mariadb_info.exists
+        fail_msg: "One or more Docker Compose containers are missing"
+
+
+    - name: Validate nginx container is running
+      ansible.builtin.assert:
+        that:
+          - nginx_info.container.State.Status == "running"
+        fail_msg: "Nginx container is not running"
+
+
+    - name: Validate portainer container is running
+      ansible.builtin.assert:
+        that:
+          - portainer_info.container.State.Status == "running"
+        fail_msg: "Portainer container is not running"
+
+
+    - name: Validate mariadb container is running
+      ansible.builtin.assert:
+        that:
+          - mariadb_info.container.State.Status == "running"
+        fail_msg: "MariaDB container is not running"
+
+
+    - name: Verify nginx HTTP response inside container
+      ansible.builtin.command:
+        cmd: docker exec nginx-nginx-1 curl -f http://localhost
+      register: nginx_http
+      changed_when: false
+
+
+    - name: Display nginx verification result
+      ansible.builtin.debug:
+        msg: "Nginx HTTP check successful"

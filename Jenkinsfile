@@ -386,6 +386,36 @@ stage('Deployment Preview') {
 
 }
 
+stage('Molecule Test') {
+
+    agent {
+        label 'molecule-runner'
+    }
+
+    when {
+        expression {
+            return env.PIPELINE_TYPE == "PR"
+        }
+    }
+
+    steps {
+
+        sh '''
+        echo "===== MOLECULE TEST ====="
+        python3 -m venv .ci-venv
+
+        . .ci-venv/bin/activate
+        pip install --upgrade pip
+
+        pip install -r ci-requirements.txt
+
+        molecule --version
+
+        molecule test -s docker_compose
+        '''
+    }
+}
+
 stage('Approval to Deploy') {
 
     when {

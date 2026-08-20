@@ -19,6 +19,38 @@ Production-style Ansible automation and CI/CD deployment lab built on Proxmox.
 - Docker
 - Docker Compose
 
+## v2.4 - Automated Testing with Molecule
+
+Released: August 2026
+
+### Added
+
+- Molecule automated testing framework
+- Docker-based Ansible role testing
+- Automated service verification
+- Idempotence validation
+- CI integration with Jenkins
+
+### Molecule Validation Flow
+
+Every pull request now validates:
+
+1. YAML syntax
+2. Ansible lint
+3. Deployment preview
+4. Molecule testing
+
+Molecule testing performs:
+
+- Test environment creation
+- Role deployment
+- Service verification
+- Idempotence check
+- Environment cleanup
+
+Example:
+molecule test -s docker_compose
+
 ## Features
 
 - Cross-platform support (Debian / RedHat based systems)
