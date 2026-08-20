@@ -402,8 +402,12 @@ stage('Molecule Test') {
 
         sh '''
         echo "===== MOLECULE TEST ====="
+        python3 -m venv .ci-venv
 
         . .ci-venv/bin/activate
+        pip install --upgrade pip
+
+        pip install -r ci-requirements.txt
 
         molecule --version
 
