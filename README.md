@@ -19,6 +19,18 @@ Production-style Ansible automation and CI/CD deployment lab built on Proxmox.
 - Docker
 - Docker Compose
 
+## Automated Testing
+
+This project uses Molecule to validate Ansible roles before merge.
+
+Molecule tests include:
+
+- Docker environment creation
+- Role execution
+- Idempotence validation
+- Service verification
+- Environment cleanup
+
 ## Features
 
 - Cross-platform support (Debian / RedHat based systems)

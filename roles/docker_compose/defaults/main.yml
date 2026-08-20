@@ -2,6 +2,8 @@
 docker_compose_nginx_image: "nginx:1.31.3"
 docker_compose_mariadb_image: "mariadb:12.3.2"
 docker_compose_portainer_image: "portainer/portainer-ce:2.39.5"
+docker_compose_verify_http: true
+docker_compose_verify_url: "http://localhost:8080"
 
 docker_compose_base_dir: /opt/compose
 docker_compose_backup_dir: /opt/compose/.known-good
