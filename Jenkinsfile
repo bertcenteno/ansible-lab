@@ -386,6 +386,32 @@ stage('Deployment Preview') {
 
 }
 
+stage('Molecule Test') {
+
+    agent {
+        label 'molecule-runner'
+    }
+
+    when {
+        expression {
+            return env.PIPELINE_TYPE == "PR"
+        }
+    }
+
+    steps {
+
+        sh '''
+        echo "===== MOLECULE TEST ====="
+
+        . .ci-venv/bin/activate
+
+        molecule --version
+
+        molecule test -s docker_compose
+        '''
+    }
+}
+
 stage('Approval to Deploy') {
 
     when {
@@ -464,40 +490,6 @@ stage('Run Ansible Playbook') {
 
     }
 
-}
-
-
-stage('Test Molecule Runner') {
-
-    agent {
-        label 'molecule-runner'
-    }
-
-    steps {
-
-        sh '''
-        echo "===== RUNNER INFORMATION ====="
-
-        hostname
-        whoami
-
-        echo
-        echo "===== PYTHON ====="
-        python3 --version
-
-        echo
-        echo "===== JAVA ====="
-        java -version
-
-        echo
-        echo "===== DOCKER ====="
-        docker --version
-
-        echo
-        echo "===== DOCKER COMPOSE ====="
-        docker compose version
-        '''
-    }
 }
 
     }
