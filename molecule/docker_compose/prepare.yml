@@ -1,0 +1,107 @@
+---
+- name: Prepare
+  hosts: all
+  become: true
+
+  tasks:
+
+    - name: Install required packages
+      ansible.builtin.apt:
+        name:
+          - python3-pip
+          - curl
+          - python3-requests
+          - python3-docker
+        state: present
+        update_cache: true
+
+    - name: Update apt cache
+      ansible.builtin.apt:
+        update_cache: true
+        cache_valid_time: 3600
+
+    - name: Install Docker CLI dependencies
+      ansible.builtin.apt:
+        name:
+          - docker.io
+          - curl
+        state: present
+
+    - name: Create Docker CLI plugin directory
+      ansible.builtin.file:
+        path: /usr/libexec/docker/cli-plugins
+        state: directory
+        mode: "0755"
+
+    - name: Download Docker Compose plugin
+      ansible.builtin.get_url:
+        url: https://github.com/docker/compose/releases/download/v2.39.2/docker-compose-linux-x86_64
+        dest: /usr/libexec/docker/cli-plugins/docker-compose
+        mode: "0755"
+
+    - name: Verify Docker CLI
+      ansible.builtin.command:
+        cmd: docker version
+      register: docker_version
+      changed_when: false
+
+    - name: Show Docker version
+      ansible.builtin.debug:
+        var: docker_version.stdout_lines
+
+    - name: Verify Docker Compose
+      ansible.builtin.command:
+        cmd: docker compose version
+      register: compose_version
+      changed_when: false
+
+    - name: Show Docker Compose version
+      ansible.builtin.debug:
+        var: compose_version.stdout
+
+    - name: Create known-good compose directories
+      ansible.builtin.file:
+        path: "{{ item }}"
+        state: directory
+        mode: "0755"
+      loop:
+        - /opt/compose/nginx
+        - /opt/compose/portainer
+        - /opt/compose/mariadb
+
+
+    - name: Create known-good nginx compose file
+      ansible.builtin.copy:
+        dest: /opt/compose/nginx/docker-compose.yml
+        mode: "0644"
+        content: |
+          services:
+            nginx:
+              image: nginx:1.31.3
+              ports:
+                - "8080:80"
+
+    - name: Create known-good portainer compose file
+      ansible.builtin.copy:
+        dest: /opt/compose/portainer/docker-compose.yml
+        mode: "0644"
+        content: |
+          services:
+            portainer:
+              image: portainer/portainer-ce:2.39.5
+              ports:
+                - "9000:9000"
+
+    - name: Create known-good mariadb compose file
+      ansible.builtin.copy:
+        dest: /opt/compose/mariadb/docker-compose.yml
+        mode: "0644"
+        content: |
+          services:
+            mariadb:
+              image: mariadb:12.3.2
+              environment:
+                MYSQL_DATABASE: molecule_test
+                MYSQL_USER: molecule
+                MYSQL_PASSWORD: molecule_password
+                MYSQL_ROOT_PASSWORD: molecule_root_password
