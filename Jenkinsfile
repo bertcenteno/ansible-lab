@@ -466,6 +466,40 @@ stage('Run Ansible Playbook') {
 
 }
 
+
+stage('Test Molecule Runner') {
+
+    agent {
+        label 'molecule-runner'
+    }
+
+    steps {
+
+        sh '''
+        echo "===== RUNNER INFORMATION ====="
+
+        hostname
+        whoami
+
+        echo
+        echo "===== PYTHON ====="
+        python3 --version
+
+        echo
+        echo "===== JAVA ====="
+        java -version
+
+        echo
+        echo "===== DOCKER ====="
+        docker --version
+
+        echo
+        echo "===== DOCKER COMPOSE ====="
+        docker compose version
+        '''
+    }
+}
+
     }
 
 post {
