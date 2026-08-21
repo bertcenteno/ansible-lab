@@ -422,6 +422,30 @@ stage('Molecule Test') {
     }
 }
 
+stage('Build Artifact') {
+
+    steps {
+
+        sh '''
+        echo "===== BUILD ARTIFACT ====="
+
+        chmod +x scripts/build-artifact.sh
+
+        ./scripts/build-artifact.sh
+
+        echo
+        echo "===== VERIFY ARTIFACT ====="
+
+        test -f "ansible-deployment-build-${BUILD_NUMBER}.tar.gz"
+
+        tar -tzf "ansible-deployment-build-${BUILD_NUMBER}.tar.gz" > /dev/null
+
+        echo "Artifact verified successfully:"
+        ls -lh "ansible-deployment-build-${BUILD_NUMBER}.tar.gz"
+        '''
+    }
+}
+
 stage('Approval to Deploy') {
 
     when {
