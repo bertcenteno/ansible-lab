@@ -443,7 +443,7 @@ stage('Build Artifact') {
         echo "Artifact verified successfully:"
         ls -lh "ansible-deployment-build-${BUILD_NUMBER}.tar.gz"
         '''
-        echo
+
         echo "===== ARCHIVE ARTIFACT ====="
 
         archiveArtifacts(
