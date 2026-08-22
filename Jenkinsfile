@@ -288,6 +288,10 @@ stage('Build Artifact') {
 
     steps {
 
+        script {
+            env.ARTIFACT_NAME = "ansible-deployment-build-${BUILD_NUMBER}.tar.gz"
+        }
+
         sh '''
         echo "===== BUILD ARTIFACT ====="
 
@@ -298,18 +302,18 @@ stage('Build Artifact') {
         echo
         echo "===== VERIFY ARTIFACT ====="
 
-        test -f "ansible-deployment-build-${BUILD_NUMBER}.tar.gz"
+        test -f "$ARTIFACT_NAME"
 
-        tar -tzf "ansible-deployment-build-${BUILD_NUMBER}.tar.gz" > /dev/null
+        tar -tzf "$ARTIFACT_NAME" > /dev/null
 
         echo "Artifact verified successfully:"
-        ls -lh "ansible-deployment-build-${BUILD_NUMBER}.tar.gz"
+        ls -lh "$ARTIFACT_NAME"
         '''
 
         echo "===== ARCHIVE ARTIFACT ====="
 
         archiveArtifacts(
-            artifacts: "ansible-deployment-build-${BUILD_NUMBER}.tar.gz",
+            artifacts: env.ARTIFACT_NAME,
             fingerprint: true
         )
     }
@@ -330,7 +334,7 @@ stage('Sync Artifact to Ansible Controller') {
             sh '''
             echo "===== SYNC DEPLOYMENT ARTIFACT ====="
 
-            ARTIFACT="ansible-deployment-build-${BUILD_NUMBER}.tar.gz"
+            ARTIFACT="$ARTIFACT_NAME"
 
             test -f "$ARTIFACT"
 
@@ -508,6 +512,7 @@ Commit: ${GIT_COMMIT_SHORT}
 Message: ${GIT_COMMIT_MESSAGE}
 Author: ${GIT_AUTHOR_NAME}
 Build: #${BUILD_NUMBER}
+Artifact: ${env.ARTIFACT_NAME}
 
 Proceed with Ansible deployment?
 """,
@@ -604,6 +609,10 @@ success {
               {
                 "title": "Build",
                 "value": "#${BUILD_NUMBER}"
+              },
+              {
+                "title": "Artifact",
+                "value": "${env.ARTIFACT_NAME}"
               },
               {
                 "title": "Environment",
@@ -718,6 +727,10 @@ failure {
               {
                 "title": "Build",
                 "value": "#${BUILD_NUMBER}"
+              },
+              {
+                "title": "Artifact",
+                "value": "${env.ARTIFACT_NAME}"
               },
               {
                 "title": "Environment",
