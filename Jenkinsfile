@@ -284,27 +284,87 @@ stage('Release Validation') {
     }
 }
 
-stage('Sync Repository to Ansible Controller') {
+stage('Build Artifact') {
 
-        when {
-            expression {
-                return env.PIPELINE_TYPE == "BRANCH"
-            }
-        }
-            steps {
-                sshagent(['ansible-controller-key']) {
-                    sh '''
-                    rsync -avz --delete \
-                    --exclude ".git" \
-                    --exclude ".gitignore" \
-                    --exclude "Jenkinsfile" \
-                    ./ \
-                    ${ANSIBLE_CONTROLLER}:${ANSIBLE_DIR}/
-                    '''
-                }
-            }
-        }
+    steps {
 
+        sh '''
+        echo "===== BUILD ARTIFACT ====="
+
+        chmod +x scripts/build-artifact.sh
+
+        ./scripts/build-artifact.sh
+
+        echo
+        echo "===== VERIFY ARTIFACT ====="
+
+        test -f "ansible-deployment-build-${BUILD_NUMBER}.tar.gz"
+
+        tar -tzf "ansible-deployment-build-${BUILD_NUMBER}.tar.gz" > /dev/null
+
+        echo "Artifact verified successfully:"
+        ls -lh "ansible-deployment-build-${BUILD_NUMBER}.tar.gz"
+        '''
+
+        echo "===== ARCHIVE ARTIFACT ====="
+
+        archiveArtifacts(
+            artifacts: "ansible-deployment-build-${BUILD_NUMBER}.tar.gz",
+            fingerprint: true
+        )
+    }
+}
+
+stage('Sync Artifact to Ansible Controller') {
+
+    when {
+        expression {
+            return env.PIPELINE_TYPE == "BRANCH"
+        }
+    }
+
+    steps {
+
+        sshagent(['ansible-controller-key']) {
+
+            sh '''
+            echo "===== SYNC DEPLOYMENT ARTIFACT ====="
+
+            ARTIFACT="ansible-deployment-build-${BUILD_NUMBER}.tar.gz"
+
+            test -f "$ARTIFACT"
+
+            echo "Artifact:"
+            ls -lh "$ARTIFACT"
+
+            echo
+            echo "===== COPY ARTIFACT TO ANSIBLE CONTROLLER ====="
+
+            scp "$ARTIFACT" \
+                ${ANSIBLE_CONTROLLER}:/tmp/
+
+            echo
+            echo "===== EXTRACT ARTIFACT ====="
+
+            ssh ${ANSIBLE_CONTROLLER} "
+                set -e
+
+                rm -rf ${ANSIBLE_DIR}
+                mkdir -p ${ANSIBLE_DIR}
+
+                tar -xzf /tmp/${ARTIFACT} \
+                    -C ${ANSIBLE_DIR} \
+                    --strip-components=1
+
+                rm -f /tmp/${ARTIFACT}
+
+                echo 'Artifact extracted successfully'
+                ls -la ${ANSIBLE_DIR}
+            "
+            '''
+        }
+    }
+}
 
 stage('Install Ansible Dependencies') {
 
