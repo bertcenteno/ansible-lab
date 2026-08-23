@@ -73,6 +73,14 @@ pipeline {
 
     agent any
 
+    parameters {
+        string(
+            name: 'ARTIFACT_BUILD',
+            defaultValue: '',
+            description: 'Jenkins build number of the artifact to deploy. Example: 63'
+        )
+    }
+
 	options {
     	timestamps()
         disableConcurrentBuilds()
@@ -82,6 +90,7 @@ pipeline {
                 artifactNumToKeepStr: '10'
             )
         )
+        copyArtifactPermission('ansible-deployment-multibranch/main')
 
 	}
 
@@ -188,6 +197,150 @@ stage('Detect Environment') {
 
 }
 
+stage('Artifact Selection') {
+
+    when {
+        expression {
+            return env.DEPLOY_ENV == 'PROD'
+        }
+    }
+
+    steps {
+
+        script {
+
+            if (!params.ARTIFACT_BUILD?.trim()) {
+                error("""
+                No artifact build specified.
+
+                Please provide ARTIFACT_BUILD.
+                Example: 63
+                """.stripIndent().trim())
+            }
+
+            if (!(params.ARTIFACT_BUILD.trim() ==~ /^\d+$/)) {
+                error("""
+                Invalid artifact build number.
+
+                ARTIFACT_BUILD must contain numbers only.
+                Example: 63
+                """.stripIndent().trim())
+            }
+
+            env.SELECTED_ARTIFACT_BUILD = params.ARTIFACT_BUILD.trim()
+            env.ARTIFACT_NAME = "ansible-deployment-build-${env.SELECTED_ARTIFACT_BUILD}.tar.gz"
+
+            echo """
+            ============================
+            ARTIFACT SELECTION
+            ============================
+            Environment: ${env.DEPLOY_ENV}
+            Artifact Build: #${env.SELECTED_ARTIFACT_BUILD}
+            Artifact: ${env.ARTIFACT_NAME}
+            ============================
+            """
+        }
+    }
+}
+
+stage('Copy Selected Artifact') {
+
+    when {
+        expression {
+            return env.DEPLOY_ENV == 'PROD'
+        }
+    }
+
+    steps {
+
+        script {
+
+            echo """
+            ============================
+            COPY SELECTED ARTIFACT
+            ============================
+            Source Job: ansible-deployment-multibranch/develop
+            Build: #${env.SELECTED_ARTIFACT_BUILD}
+            Artifact: ${env.ARTIFACT_NAME}
+            ============================
+            """
+
+            copyArtifacts(
+                projectName: 'ansible-deployment-multibranch/develop',
+                selector: specific(env.SELECTED_ARTIFACT_BUILD),
+                filter: env.ARTIFACT_NAME,
+                fingerprintArtifacts: true
+            )
+
+            echo "Selected artifact copied successfully:"
+            sh "ls -lh '${env.ARTIFACT_NAME}'"
+        }
+    }
+}
+
+stage('Verify Selected Artifact') {
+
+    when {
+        expression {
+            return env.DEPLOY_ENV == 'PROD'
+        }
+    }
+
+    steps {
+
+        sh '''
+        echo "===== VERIFY SELECTED ARTIFACT ====="
+
+        test -f "$ARTIFACT_NAME"
+
+        echo "Artifact:"
+        ls -lh "$ARTIFACT_NAME"
+
+        echo
+        echo "===== ARTIFACT VERSION ====="
+
+        tar -xOzf "$ARTIFACT_NAME" ansible-deployment/VERSION
+
+        echo
+        echo "===== VERIFY BUILD NUMBER ====="
+
+        ARTIFACT_BUILD_FROM_VERSION="$(tar -xOzf "$ARTIFACT_NAME" ansible-deployment/VERSION \
+            | awk -F= '/^BUILD_NUMBER=/ {print $2}')"
+
+        test -n "$ARTIFACT_BUILD_FROM_VERSION"
+
+        if [ "$ARTIFACT_BUILD_FROM_VERSION" != "$SELECTED_ARTIFACT_BUILD" ]; then
+            echo "ERROR: Artifact build number mismatch!"
+            echo "Selected build : $SELECTED_ARTIFACT_BUILD"
+            echo "Artifact build : $ARTIFACT_BUILD_FROM_VERSION"
+            exit 1
+        fi
+
+        echo
+        echo "===== VERIFY ARTIFACT SOURCE ====="
+
+        ARTIFACT_BRANCH="$(tar -xOzf "$ARTIFACT_NAME" ansible-deployment/VERSION \
+            | awk -F= '/^GIT_BRANCH=/ {print $2}')"
+
+        test -n "$ARTIFACT_BRANCH"
+
+        if [ "$ARTIFACT_BRANCH" != "develop" ]; then
+            echo "ERROR: Artifact branch mismatch!"
+            echo "Expected branch : develop"
+            echo "Artifact branch : $ARTIFACT_BRANCH"
+            exit 1
+        fi
+
+        echo "Artifact source branch verified: $ARTIFACT_BRANCH"
+
+        echo
+        echo "Artifact identity verified successfully."
+        echo "Selected build : #$SELECTED_ARTIFACT_BUILD"
+        echo "Artifact build : #$ARTIFACT_BUILD_FROM_VERSION"
+        '''
+    }
+}
+
 stage('Install CI Dependencies') {
 
     steps {
@@ -285,6 +438,12 @@ stage('Release Validation') {
 }
 
 stage('Build Artifact') {
+
+    when {
+        expression {
+            return env.DEPLOY_ENV != 'PROD'
+        }
+    }
 
     steps {
 
