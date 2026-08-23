@@ -73,9 +73,24 @@ pipeline {
 
     agent any
 
+    parameters {
+        string(
+            name: 'ARTIFACT_BUILD',
+            defaultValue: '',
+            description: 'Jenkins build number of the artifact to deploy. Example: 63'
+        )
+    }
+
 	options {
     	timestamps()
-	disableConcurrentBuilds()
+        disableConcurrentBuilds()
+        buildDiscarder(
+            logRotator(
+                numToKeepStr: '20',
+                artifactNumToKeepStr: '10'
+            )
+        )
+        copyArtifactPermission('ansible-deployment-multibranch/main')
 
 	}
 
@@ -182,6 +197,150 @@ stage('Detect Environment') {
 
 }
 
+stage('Artifact Selection') {
+
+    when {
+        expression {
+            return env.DEPLOY_ENV == 'PROD'
+        }
+    }
+
+    steps {
+
+        script {
+
+            if (!params.ARTIFACT_BUILD?.trim()) {
+                error("""
+                No artifact build specified.
+
+                Please provide ARTIFACT_BUILD.
+                Example: 63
+                """.stripIndent().trim())
+            }
+
+            if (!(params.ARTIFACT_BUILD.trim() ==~ /^\d+$/)) {
+                error("""
+                Invalid artifact build number.
+
+                ARTIFACT_BUILD must contain numbers only.
+                Example: 63
+                """.stripIndent().trim())
+            }
+
+            env.SELECTED_ARTIFACT_BUILD = params.ARTIFACT_BUILD.trim()
+            env.ARTIFACT_NAME = "ansible-deployment-build-${env.SELECTED_ARTIFACT_BUILD}.tar.gz"
+
+            echo """
+            ============================
+            ARTIFACT SELECTION
+            ============================
+            Environment: ${env.DEPLOY_ENV}
+            Artifact Build: #${env.SELECTED_ARTIFACT_BUILD}
+            Artifact: ${env.ARTIFACT_NAME}
+            ============================
+            """
+        }
+    }
+}
+
+stage('Copy Selected Artifact') {
+
+    when {
+        expression {
+            return env.DEPLOY_ENV == 'PROD'
+        }
+    }
+
+    steps {
+
+        script {
+
+            echo """
+            ============================
+            COPY SELECTED ARTIFACT
+            ============================
+            Source Job: ansible-deployment-multibranch/develop
+            Build: #${env.SELECTED_ARTIFACT_BUILD}
+            Artifact: ${env.ARTIFACT_NAME}
+            ============================
+            """
+
+            copyArtifacts(
+                projectName: 'ansible-deployment-multibranch/develop',
+                selector: specific(env.SELECTED_ARTIFACT_BUILD),
+                filter: env.ARTIFACT_NAME,
+                fingerprintArtifacts: true
+            )
+
+            echo "Selected artifact copied successfully:"
+            sh "ls -lh '${env.ARTIFACT_NAME}'"
+        }
+    }
+}
+
+stage('Verify Selected Artifact') {
+
+    when {
+        expression {
+            return env.DEPLOY_ENV == 'PROD'
+        }
+    }
+
+    steps {
+
+        sh '''
+        echo "===== VERIFY SELECTED ARTIFACT ====="
+
+        test -f "$ARTIFACT_NAME"
+
+        echo "Artifact:"
+        ls -lh "$ARTIFACT_NAME"
+
+        echo
+        echo "===== ARTIFACT VERSION ====="
+
+        tar -xOzf "$ARTIFACT_NAME" ansible-deployment/VERSION
+
+        echo
+        echo "===== VERIFY BUILD NUMBER ====="
+
+        ARTIFACT_BUILD_FROM_VERSION="$(tar -xOzf "$ARTIFACT_NAME" ansible-deployment/VERSION \
+            | awk -F= '/^BUILD_NUMBER=/ {print $2}')"
+
+        test -n "$ARTIFACT_BUILD_FROM_VERSION"
+
+        if [ "$ARTIFACT_BUILD_FROM_VERSION" != "$SELECTED_ARTIFACT_BUILD" ]; then
+            echo "ERROR: Artifact build number mismatch!"
+            echo "Selected build : $SELECTED_ARTIFACT_BUILD"
+            echo "Artifact build : $ARTIFACT_BUILD_FROM_VERSION"
+            exit 1
+        fi
+
+        echo
+        echo "===== VERIFY ARTIFACT SOURCE ====="
+
+        ARTIFACT_BRANCH="$(tar -xOzf "$ARTIFACT_NAME" ansible-deployment/VERSION \
+            | awk -F= '/^GIT_BRANCH=/ {print $2}')"
+
+        test -n "$ARTIFACT_BRANCH"
+
+        if [ "$ARTIFACT_BRANCH" != "develop" ]; then
+            echo "ERROR: Artifact branch mismatch!"
+            echo "Expected branch : develop"
+            echo "Artifact branch : $ARTIFACT_BRANCH"
+            exit 1
+        fi
+
+        echo "Artifact source branch verified: $ARTIFACT_BRANCH"
+
+        echo
+        echo "Artifact identity verified successfully."
+        echo "Selected build : #$SELECTED_ARTIFACT_BUILD"
+        echo "Artifact build : #$ARTIFACT_BUILD_FROM_VERSION"
+        '''
+    }
+}
+
 stage('Install CI Dependencies') {
 
     steps {
@@ -278,27 +437,97 @@ stage('Release Validation') {
     }
 }
 
-stage('Sync Repository to Ansible Controller') {
+stage('Build Artifact') {
 
-        when {
-            expression {
-                return env.PIPELINE_TYPE == "BRANCH"
-            }
+    when {
+        expression {
+            return env.DEPLOY_ENV != 'PROD'
         }
-            steps {
-                sshagent(['ansible-controller-key']) {
-                    sh '''
-                    rsync -avz --delete \
-                    --exclude ".git" \
-                    --exclude ".gitignore" \
-                    --exclude "Jenkinsfile" \
-                    ./ \
-                    ${ANSIBLE_CONTROLLER}:${ANSIBLE_DIR}/
-                    '''
-                }
-            }
+    }
+
+    steps {
+
+        script {
+            env.ARTIFACT_NAME = "ansible-deployment-build-${BUILD_NUMBER}.tar.gz"
         }
 
+        sh '''
+        echo "===== BUILD ARTIFACT ====="
+
+        chmod +x scripts/build-artifact.sh
+
+        ./scripts/build-artifact.sh
+
+        echo
+        echo "===== VERIFY ARTIFACT ====="
+
+        test -f "$ARTIFACT_NAME"
+
+        tar -tzf "$ARTIFACT_NAME" > /dev/null
+
+        echo "Artifact verified successfully:"
+        ls -lh "$ARTIFACT_NAME"
+        '''
+
+        echo "===== ARCHIVE ARTIFACT ====="
+
+        archiveArtifacts(
+            artifacts: env.ARTIFACT_NAME,
+            fingerprint: true
+        )
+    }
+}
+
+stage('Sync Artifact to Ansible Controller') {
+
+    when {
+        expression {
+            return env.PIPELINE_TYPE == "BRANCH"
+        }
+    }
+
+    steps {
+
+        sshagent(['ansible-controller-key']) {
+
+            sh '''
+            echo "===== SYNC DEPLOYMENT ARTIFACT ====="
+
+            ARTIFACT="$ARTIFACT_NAME"
+
+            test -f "$ARTIFACT"
+
+            echo "Artifact:"
+            ls -lh "$ARTIFACT"
+
+            echo
+            echo "===== COPY ARTIFACT TO ANSIBLE CONTROLLER ====="
+
+            scp "$ARTIFACT" \
+                ${ANSIBLE_CONTROLLER}:/tmp/
+
+            echo
+            echo "===== EXTRACT ARTIFACT ====="
+
+            ssh ${ANSIBLE_CONTROLLER} "
+                set -e
+
+                rm -rf ${ANSIBLE_DIR}
+                mkdir -p ${ANSIBLE_DIR}
+
+                tar -xzf /tmp/${ARTIFACT} \
+                    -C ${ANSIBLE_DIR} \
+                    --strip-components=1
+
+                rm -f /tmp/${ARTIFACT}
+
+                echo 'Artifact extracted successfully'
+                ls -la ${ANSIBLE_DIR}
+            "
+            '''
+        }
+    }
+}
 
 stage('Install Ansible Dependencies') {
 
@@ -442,6 +671,7 @@ Commit: ${GIT_COMMIT_SHORT}
 Message: ${GIT_COMMIT_MESSAGE}
 Author: ${GIT_AUTHOR_NAME}
 Build: #${BUILD_NUMBER}
+Artifact: ${env.ARTIFACT_NAME}
 
 Proceed with Ansible deployment?
 """,
@@ -538,6 +768,10 @@ success {
               {
                 "title": "Build",
                 "value": "#${BUILD_NUMBER}"
+              },
+              {
+                "title": "Artifact",
+                "value": "${env.ARTIFACT_NAME}"
               },
               {
                 "title": "Environment",
@@ -652,6 +886,10 @@ failure {
               {
                 "title": "Build",
                 "value": "#${BUILD_NUMBER}"
+              },
+              {
+                "title": "Artifact",
+                "value": "${env.ARTIFACT_NAME}"
               },
               {
                 "title": "Environment",
