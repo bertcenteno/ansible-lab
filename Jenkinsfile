@@ -79,6 +79,12 @@ pipeline {
             defaultValue: '',
             description: 'Jenkins build number of the artifact to deploy. Example: 63'
         )
+
+        booleanParam(
+            name: 'DEPLOY_PROD',
+            defaultValue: false,
+            description: 'Enable production deployment. Must be checked to deploy to PROD.'
+        )
     }
 
 	options {
@@ -167,7 +173,12 @@ stage('Detect Environment') {
             else if (env.BRANCH_NAME == 'main') {
 
                 env.PIPELINE_TYPE = "BRANCH"
-                env.DEPLOY_ENV = "PROD"
+
+                if (params.DEPLOY_PROD) {
+                    env.DEPLOY_ENV = "PROD"
+                } else {
+                    env.DEPLOY_ENV = "VALIDATION"
+                }
 
             }
             else if (env.BRANCH_NAME.startsWith('feature/')) {
@@ -218,12 +229,12 @@ stage('Artifact Selection') {
                 """.stripIndent().trim())
             }
 
-            if (!(params.ARTIFACT_BUILD.trim() ==~ /^\d+$/)) {
+            if (!(params.ARTIFACT_BUILD.trim() ==~ /^[1-9]\d*$/)) {
                 error("""
                 Invalid artifact build number.
 
-                ARTIFACT_BUILD must contain numbers only.
-                Example: 63
+                ARTIFACT_BUILD must be a positive Jenkins build number.
+                Example: 64
                 """.stripIndent().trim())
             }
 
@@ -480,11 +491,11 @@ stage('Build Artifact') {
 
 stage('Sync Artifact to Ansible Controller') {
 
-    when {
-        expression {
-            return env.PIPELINE_TYPE == "BRANCH"
+        when {
+            expression {
+                return env.DEPLOY_ENV == "PROD"
+            }
         }
-    }
 
     steps {
 
@@ -533,7 +544,7 @@ stage('Install Ansible Dependencies') {
 
         when {
             expression {
-                return env.PIPELINE_TYPE == "BRANCH"
+                return env.DEPLOY_ENV == "PROD"
             }
         }
             steps {
@@ -705,7 +716,7 @@ stage('Run Ansible Playbook') {
 
     when {
     	expression {
-        	return env.PIPELINE_TYPE == "BRANCH"
+            return env.DEPLOY_ENV == "PROD"
     	}
 	}
 
