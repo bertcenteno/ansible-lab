@@ -19,6 +19,36 @@ Production-style Ansible automation and CI/CD deployment lab built on Proxmox.
 - Docker
 - Docker Compose
 
+## v2.5 - Artifact Selection & Production Deployment Gate
+
+Released: August 2026
+
+### Added
+
+- Jenkins deployment artifact generation
+- Artifact identity verification using:
+  - Jenkins build number
+  - Git commit
+  - Git branch
+- Manual production artifact selection using `ARTIFACT_BUILD`
+- Artifact verification before PROD deployment
+- Production deployment gate using `DEPLOY_PROD`
+- Manual approval before production execution
+- Immutable artifact promotion workflow
+- Production deployment using previously validated artifacts
+
+### Production Artifact Validation
+
+Successfully tested:
+
+- Artifact: ansible-deployment-build-67.tar.gz
+- Source: develop
+- Commit: 309dad0
+- Production pipeline: main #20
+- Environment: PROD
+- Approval: admin
+- Result: SUCCESS
+
 ## v2.4 - Automated Testing with Molecule
 
 Released: August 2026
