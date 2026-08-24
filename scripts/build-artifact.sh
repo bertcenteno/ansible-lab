@@ -7,7 +7,7 @@ REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$REPO_ROOT"
 
 GIT_COMMIT="$(git rev-parse --short HEAD)"
-GIT_BRANCH="$(git branch --show-current)"
+GIT_BRANCH="${BRANCH_NAME:-$(git branch --show-current)}"
 
 BUILD_NUMBER="${BUILD_NUMBER:-manual}"
 
