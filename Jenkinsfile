@@ -186,6 +186,13 @@ stage('Detect Environment') {
                 env.PIPELINE_TYPE = "FEATURE"
                 env.DEPLOY_ENV = "VALIDATION"
             }
+            else if (env.BRANCH_NAME.startsWith('docs/')) {
+
+                env.PIPELINE_TYPE = "DOCS"
+                env.DEPLOY_ENV = "NONE"
+
+            }
+
             else {
 
                 error("Unsupported branch: ${env.BRANCH_NAME}")
@@ -206,6 +213,35 @@ stage('Detect Environment') {
 
     }
 
+}
+
+stage('Documentation Validation') {
+
+    when {
+        expression {
+            return env.PIPELINE_TYPE == "DOCS"
+        }
+    }
+
+    steps {
+
+        echo """
+        ============================
+        DOCUMENTATION VALIDATION
+        ============================
+        Branch: ${env.BRANCH_NAME}
+        Environment: ${env.DEPLOY_ENV}
+        Deployment: NOT REQUIRED
+        ============================
+        """
+
+        sh '''
+        echo "Checking documentation changes..."
+        test -f README.md
+        echo "README validation successful"
+        '''
+
+    }
 }
 
 stage('Artifact Selection') {
