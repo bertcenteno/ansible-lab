@@ -488,7 +488,7 @@ stage('Build Artifact') {
 
     when {
         expression {
-            return env.DEPLOY_ENV != 'PROD'
+            return env.DEPLOY_ENV == 'develop'
         }
     }
 
