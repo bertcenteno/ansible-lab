@@ -55,6 +55,10 @@ tar -czf "$ARTIFACT_NAME" \
     -C "$WORK_DIR" \
     ansible-deployment
 
+echo "===== GENERATING CHECKSUM ====="
+
+sha256sum "$ARTIFACT_NAME" > "${ARTIFACT_NAME}.sha256"
+
 echo
 echo "===== ARTIFACT CREATED ====="
 
