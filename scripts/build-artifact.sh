@@ -62,7 +62,12 @@ sha256sum "$ARTIFACT_NAME" > "${ARTIFACT_NAME}.sha256"
 echo
 echo "===== ARTIFACT CREATED ====="
 
-ls -lh "$ARTIFACT_NAME"
+ls -lh "$ARTIFACT_NAME" "${ARTIFACT_NAME}.sha256"
+
+echo
+echo "===== CHECKSUM ====="
+
+cat "${ARTIFACT_NAME}.sha256"
 
 echo
 echo "===== ARTIFACT CONTENTS ====="
