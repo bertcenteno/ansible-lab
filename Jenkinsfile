@@ -519,7 +519,7 @@ stage('Build Artifact') {
         echo "===== ARCHIVE ARTIFACT ====="
 
         archiveArtifacts(
-            artifacts: env.ARTIFACT_NAME,
+            artifacts: "${env.ARTIFACT_NAME},${env.ARTIFACT_NAME}.sha256",
             fingerprint: true
         )
     }
