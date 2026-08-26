@@ -315,12 +315,16 @@ stage('Copy Selected Artifact') {
             copyArtifacts(
                 projectName: 'ansible-deployment-multibranch/develop',
                 selector: specific(env.SELECTED_ARTIFACT_BUILD),
-                filter: env.ARTIFACT_NAME,
+                filter: "${env.ARTIFACT_NAME},${env.ARTIFACT_NAME}.sha256",
                 fingerprintArtifacts: true
             )
 
             echo "Selected artifact copied successfully:"
-            sh "ls -lh '${env.ARTIFACT_NAME}'"
+
+            sh """
+            ls -lh '${env.ARTIFACT_NAME}'
+            ls -lh '${env.ARTIFACT_NAME}.sha256'
+            """
         }
     }
 }
