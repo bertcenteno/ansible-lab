@@ -348,6 +348,13 @@ stage('Verify Selected Artifact') {
         ls -lh "$ARTIFACT_NAME"
 
         echo
+        echo "===== VERIFY ARTIFACT CHECKSUM ====="
+
+        test -f "${ARTIFACT_NAME}.sha256"
+
+        sha256sum -c "${ARTIFACT_NAME}.sha256"
+
+        echo
         echo "===== ARTIFACT VERSION ====="
 
         tar -xOzf "$ARTIFACT_NAME" ansible-deployment/VERSION
