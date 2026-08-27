@@ -315,12 +315,16 @@ stage('Copy Selected Artifact') {
             copyArtifacts(
                 projectName: 'ansible-deployment-multibranch/develop',
                 selector: specific(env.SELECTED_ARTIFACT_BUILD),
-                filter: env.ARTIFACT_NAME,
+                filter: "${env.ARTIFACT_NAME},${env.ARTIFACT_NAME}.sha256",
                 fingerprintArtifacts: true
             )
 
             echo "Selected artifact copied successfully:"
-            sh "ls -lh '${env.ARTIFACT_NAME}'"
+
+            sh """
+            ls -lh '${env.ARTIFACT_NAME}'
+            ls -lh '${env.ARTIFACT_NAME}.sha256'
+            """
         }
     }
 }
@@ -342,6 +346,13 @@ stage('Verify Selected Artifact') {
 
         echo "Artifact:"
         ls -lh "$ARTIFACT_NAME"
+
+        echo
+        echo "===== VERIFY ARTIFACT CHECKSUM ====="
+
+        test -f "${ARTIFACT_NAME}.sha256"
+
+        sha256sum -c "${ARTIFACT_NAME}.sha256"
 
         echo
         echo "===== ARTIFACT VERSION ====="
@@ -519,7 +530,7 @@ stage('Build Artifact') {
         echo "===== ARCHIVE ARTIFACT ====="
 
         archiveArtifacts(
-            artifacts: env.ARTIFACT_NAME,
+            artifacts: "${env.ARTIFACT_NAME},${env.ARTIFACT_NAME}.sha256",
             fingerprint: true
         )
     }
