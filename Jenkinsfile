@@ -784,6 +784,51 @@ stage('Run Ansible Playbook') {
 
 }
 
+stage('Generate Deployment Report') {
+
+    when {
+        expression {
+            return env.DEPLOY_ENV == "PROD"
+        }
+    }
+
+    steps {
+
+        script {
+
+            echo """
+            ============================
+            GENERATE DEPLOYMENT REPORT
+            ============================
+            Environment   : ${env.DEPLOY_ENV}
+            Jenkins Job   : ${env.JOB_NAME}
+            Jenkins Build : #${env.BUILD_NUMBER}
+            Artifact       : ${env.ARTIFACT_NAME}
+            Artifact Build : #${env.SELECTED_ARTIFACT_BUILD}
+            Approved By   : ${env.APPROVER}
+            ============================
+            """
+
+            sh '''
+            chmod +x scripts/generate-deployment-report.sh
+
+            export ENVIRONMENT="${DEPLOY_ENV}"
+            export JOB_NAME="${JOB_NAME}"
+            export BUILD_NUMBER="${BUILD_NUMBER}"
+            export ARTIFACT_NAME="${ARTIFACT_NAME}"
+            export ARTIFACT_BUILD="${SELECTED_ARTIFACT_BUILD}"
+            export ARTIFACT_CHECKSUM="$(awk '{print $1}' "${ARTIFACT_NAME}.sha256")"
+            export GIT_BRANCH="${GIT_BRANCH}"
+            export GIT_COMMIT="${GIT_COMMIT}"
+            export APPROVED_BY="${APPROVER}"
+            export DEPLOY_STATUS="SUCCESS"
+
+            ./scripts/generate-deployment-report.sh
+            '''
+        }
+    }
+}
+
     }
 
 post {
