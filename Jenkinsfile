@@ -829,6 +829,39 @@ stage('Generate Deployment Report') {
     }
 }
 
+stage('Archive Deployment Report') {
+
+    when {
+        expression {
+            return env.DEPLOY_ENV == "PROD"
+        }
+    }
+
+    steps {
+
+        script {
+
+            def reportPath = "deployment-history/${env.DEPLOY_ENV.toLowerCase()}/deployment-${env.BUILD_NUMBER}.json"
+
+            echo """
+            ============================
+            ARCHIVE DEPLOYMENT REPORT
+            ============================
+            Report: ${reportPath}
+            ============================
+            """
+
+            archiveArtifacts(
+                artifacts: reportPath,
+                fingerprint: true
+            )
+
+            echo "Deployment report archived successfully:"
+            sh "ls -lh '${reportPath}'"
+        }
+    }
+}
+
     }
 
 post {
