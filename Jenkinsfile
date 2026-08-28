@@ -784,6 +784,91 @@ stage('Run Ansible Playbook') {
 
 }
 
+stage('Generate Deployment Report') {
+
+    when {
+        expression {
+            return env.DEPLOY_ENV == "PROD"
+        }
+    }
+
+    steps {
+
+        script {
+
+            echo """
+            ============================
+            GENERATE DEPLOYMENT REPORT
+            ============================
+            Environment   : ${env.DEPLOY_ENV}
+            Jenkins Job   : ${env.JOB_NAME}
+            Jenkins Build : #${env.BUILD_NUMBER}
+            Artifact       : ${env.ARTIFACT_NAME}
+            Artifact Build : #${env.SELECTED_ARTIFACT_BUILD}
+            Approved By   : ${env.APPROVER}
+            ============================
+            """
+
+            env.ARTIFACT_CHECKSUM = sh(
+                script: "awk '{print \$1}' '${env.ARTIFACT_NAME}.sha256'",
+                returnStdout: true
+            ).trim()
+
+            env.DEPLOYMENT_REPORT = "deployment-history/${env.DEPLOY_ENV.toLowerCase()}/deployment-${env.BUILD_NUMBER}.json"
+
+            sh '''
+            chmod +x scripts/generate-deployment-report.sh
+
+            export ENVIRONMENT="${DEPLOY_ENV}"
+            export JOB_NAME="${JOB_NAME}"
+            export BUILD_NUMBER="${BUILD_NUMBER}"
+            export ARTIFACT_NAME="${ARTIFACT_NAME}"
+            export ARTIFACT_BUILD="${SELECTED_ARTIFACT_BUILD}"
+            export ARTIFACT_CHECKSUM="${ARTIFACT_CHECKSUM}"
+            export GIT_BRANCH="${GIT_BRANCH}"
+            export GIT_COMMIT="${GIT_COMMIT}"
+            export APPROVED_BY="${APPROVER}"
+            export DEPLOY_STATUS="SUCCESS"
+
+            ./scripts/generate-deployment-report.sh
+            '''
+        }
+    }
+}
+
+stage('Archive Deployment Report') {
+
+    when {
+        expression {
+            return env.DEPLOY_ENV == "PROD"
+        }
+    }
+
+    steps {
+
+        script {
+
+            def reportPath = "deployment-history/${env.DEPLOY_ENV.toLowerCase()}/deployment-${env.BUILD_NUMBER}.json"
+
+            echo """
+            ============================
+            ARCHIVE DEPLOYMENT REPORT
+            ============================
+            Report: ${reportPath}
+            ============================
+            """
+
+            archiveArtifacts(
+                artifacts: reportPath,
+                fingerprint: true
+            )
+
+            echo "Deployment report archived successfully:"
+            sh "ls -lh '${reportPath}'"
+        }
+    }
+}
+
     }
 
 post {
@@ -832,6 +917,18 @@ success {
                 "value": "${env.ARTIFACT_NAME}"
               },
               {
+                "title": "Artifact Build",
+                "value": "#${env.SELECTED_ARTIFACT_BUILD ?: 'N/A'}"
+              },
+              {
+                "title": "Artifact Checksum",
+                "value": "${env.DEPLOY_ENV == 'PROD' ? env.ARTIFACT_CHECKSUM : 'N/A'}"
+              },
+              {
+                "title": "Checksum Status",
+                "value": "${env.DEPLOY_ENV == 'PROD' ? 'PASSED' : 'N/A'}"
+              },
+              {
                 "title": "Environment",
                 "value": "${env.DEPLOY_ENV}"
               },
@@ -842,6 +939,10 @@ success {
               {
                 "title": "Approved By",
                 "value": "${APPROVER_VALUE}"
+              },
+              {
+                "title": "Deployment Report",
+                "value": "${env.DEPLOYMENT_REPORT ?: 'N/A'}"
               },
               {
                 "title": "Repository",
