@@ -19,6 +19,74 @@ Production-style Ansible automation and CI/CD deployment lab built on Proxmox.
 - Docker
 - Docker Compose
 
+## v2.6 - Security & Compliance
+
+Released: August 2026
+
+### Added
+
+- Artifact SHA256 checksum generation during Jenkins artifact build
+- Artifact checksum archive together with deployment package
+- Artifact checksum transfer during PROD artifact selection
+- Artifact integrity verification before PROD deployment
+- Artifact identity validation using build metadata
+- Enhanced production deployment security controls
+
+### Artifact Integrity Validation
+
+The production deployment workflow now verifies that the artifact promoted to PROD is the same artifact generated and validated during the DEV pipeline.
+
+Validation flow:
+
+```text
+develop
+    |
+    | Jenkins Build
+    v
+ansible-deployment-build-X.tar.gz
+ansible-deployment-build-X.tar.gz.sha256
+    |
+    | Archive Artifact + Checksum
+    v
+Production Artifact Selection
+    |
+    | SHA256 Verification
+    v
+Manual Approval Gate
+    |
+    v
+PROD Deployment
+
+## v2.5 - Artifact Selection & Production Deployment Gate
+
+Released: August 2026
+
+### Added
+
+- Jenkins deployment artifact generation
+- Artifact identity verification using:
+  - Jenkins build number
+  - Git commit
+  - Git branch
+- Manual production artifact selection using `ARTIFACT_BUILD`
+- Artifact verification before PROD deployment
+- Production deployment gate using `DEPLOY_PROD`
+- Manual approval before production execution
+- Immutable artifact promotion workflow
+- Production deployment using previously validated artifacts
+
+### Production Artifact Validation
+
+Successfully tested:
+
+- Artifact: ansible-deployment-build-67.tar.gz
+- Source: develop
+- Commit: 309dad0
+- Production pipeline: main #20
+- Environment: PROD
+- Approval: admin
+- Result: SUCCESS
+
 ## v2.4 - Automated Testing with Molecule
 
 Released: August 2026

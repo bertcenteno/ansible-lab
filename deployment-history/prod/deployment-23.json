@@ -1,0 +1,18 @@
+{
+  "timestamp": "2026-08-27T03:44:04Z",
+  "environment": "PROD",
+
+  "jenkins_job": "ansible-deployment-multibranch/main",
+  "jenkins_build": "23",
+
+  "artifact": "ansible-deployment-build-75.tar.gz",
+  "artifact_build": "75",
+  "artifact_checksum": "eb5937e6112006f76e54a414d32dcf3916e9ec78ff91294c3efc7ccde3e126db",
+  "checksum_status": "PASSED",
+
+  "git_branch": "develop",
+  "git_commit": "cfde048",
+
+  "approved_by": "admin",
+  "status": "SUCCESS"
+}
