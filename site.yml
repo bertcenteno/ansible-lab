@@ -2,6 +2,8 @@
 - name: Configure Docker Hosts
   hosts: dockerhosts
   become: true
+  serial: 1
+  any_errors_fatal: true
 
   roles:
     - role: common
