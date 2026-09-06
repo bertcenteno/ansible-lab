@@ -19,6 +19,63 @@ Production-style Ansible automation and CI/CD deployment lab built on Proxmox.
 - Docker
 - Docker Compose
 
+## v2.8 - Rolling Production Deployment
+
+Released: September 2026
+
+### Added
+
+- Multi-host production Docker host support
+- Rolling deployment strategy using Ansible `serial`
+- Production deployment safety control using `any_errors_fatal`
+- Sequential host deployment validation
+- Production rolling deployment verification
+
+### Multi-host Production Support
+
+The production inventory now supports multiple Docker hosts:
+
+```yaml
+dockerhosts:
+  hosts:
+    docker-prod:
+      ansible_host: 172.26.8.65
+
+    docker-prod-02:
+      ansible_host: 172.26.8.67
+```
+
+### Rolling Deployment Strategy
+
+Production deployments now execute hosts sequentially using:
+
+```yaml
+serial: 1
+```
+Deployment flow:
+
+```text
+docker-prod
+     |
+     v
+Verification
+     |
+     v
+docker-prod-02
+     |
+     v
+Verification
+
+And optionally:
+
+```markdown
+### Deployment Safety
+
+Added:
+
+```yaml
+any_errors_fatal: true
+
 ## v2.6 - Security & Compliance
 
 Released: August 2026
@@ -900,6 +957,13 @@ Production deployments require manual approval
 Deployment activities are logged through Jenkins and Teams notifications
 
 ## Version History
+
+### v2.8
+
+- Added multi-host production deployment support
+- Implemented rolling deployment strategy
+- Added sequential production deployment using Ansible `serial`
+- Validated rolling deployment on multiple PROD Docker hosts
 
 ### v2.7
 
