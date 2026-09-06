@@ -901,6 +901,41 @@ Deployment activities are logged through Jenkins and Teams notifications
 
 ## Version History
 
+### v2.7
+
+Deployment observability and deployment evidence tracking:
+
+- Added deployment metadata report generation
+- Added Jenkins job and build tracking
+- Added deployed artifact tracking
+- Added artifact build number tracking
+- Added artifact SHA256 checksum tracking
+- Added checksum verification status to deployment reports
+- Added Git branch and commit tracking
+- Added production approver tracking
+- Added deployment status tracking
+- Added Jenkins deployment report archiving
+- Added Jenkins fingerprinting for deployment reports
+- Enhanced Teams deployment notifications with deployment metadata
+- Added artifact build visibility to PROD notifications
+- Added artifact checksum visibility to PROD notifications
+- Added deployment report path visibility to PROD notifications
+
+### Production Validation
+
+Successfully tested:
+
+- Jenkins PROD deployment: `main #25`
+- Artifact: `ansible-deployment-build-78.tar.gz`
+- Artifact Build: `#78`
+- Environment: `PROD`
+- SHA256: `43901a9b4d7d126f64eb195dda817d3edf7236e370f41f4cb4a6eddaf740520c`
+- Checksum Status: `PASSED`
+- Approved By: `admin`
+- Deployment Status: `SUCCESS`
+- Deployment Report: `deployment-25.json`
+- Deployment report successfully archived as a Jenkins build artifact
+
 ### v2.3
 
 Deployment Preview workflow and pre-deployment change visibility:

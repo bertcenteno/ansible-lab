@@ -9,3 +9,5 @@ all:
       hosts:
         docker-prod:
           ansible_host: 172.26.8.65
+        docker-prod-02:
+          ansible_host: 172.26.8.67
