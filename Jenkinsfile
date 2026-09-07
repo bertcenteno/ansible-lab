@@ -105,13 +105,6 @@ pipeline {
         ANSIBLE_DIR = "/home/ansible/ansible-lab"
         VAULT_PASSWORD = credentials('ansible-vault-password')
         TEAMS_WEBHOOK = credentials('teams-webhook-url')
-
-        // v2.9 Quality Gate status
-        YAML_LINT_STATUS = "NOT_RUN"
-        ANSIBLE_LINT_STATUS = "NOT_RUN"
-        SYNTAX_STATUS = "NOT_RUN"
-        PREVIEW_STATUS = "NOT_RUN"
-        MOLECULE_STATUS = "NOT_RUN"
     }
 
     stages {
@@ -206,6 +199,12 @@ stage('Detect Environment') {
 
             }
 
+            env.YAML_LINT_STATUS = "NOT_RUN"
+            env.ANSIBLE_LINT_STATUS = "NOT_RUN"
+            env.SYNTAX_STATUS = "NOT_RUN"
+            env.PREVIEW_STATUS = "NOT_RUN"
+            env.MOLECULE_STATUS = "NOT_RUN"
+            env.QUALITY_GATE_STATUS = "NOT_RUN"
 
             echo """
             ============================
