@@ -801,7 +801,7 @@ stage('Quality Gate') {
                 echo """
                 ============================
                 QUALITY GATE: FAILED
-                Deployment: BLOCKED
+                Pipeline Progression: BLOCKED
                 ============================
                 """
 
@@ -816,7 +816,7 @@ stage('Quality Gate') {
             echo """
             ============================
             QUALITY GATE: PASSED
-            Deployment: ALLOWED
+            Pipeline Progression: ALLOWED
             ============================
             """
         }
