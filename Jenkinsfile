@@ -199,6 +199,12 @@ stage('Detect Environment') {
 
             }
 
+            env.YAML_LINT_STATUS = "NOT_RUN"
+            env.ANSIBLE_LINT_STATUS = "NOT_RUN"
+            env.SYNTAX_STATUS = "NOT_RUN"
+            env.PREVIEW_STATUS = "NOT_RUN"
+            env.MOLECULE_STATUS = "NOT_RUN"
+            env.QUALITY_GATE_STATUS = "NOT_RUN"
 
             echo """
             ============================
@@ -426,6 +432,11 @@ stage('YAML Lint') {
         yamllint .
         '''
 
+        script {
+            env.YAML_LINT_STATUS = "PASS"
+            echo "Quality Gate | YAML Lint: ${env.YAML_LINT_STATUS}"
+        }
+
     }
 
 }
@@ -439,6 +450,11 @@ stage('Ansible Lint') {
 
         ansible-lint
         '''
+
+        script {
+            env.ANSIBLE_LINT_STATUS = "PASS"
+            echo "Quality Gate | Ansible Lint: ${env.ANSIBLE_LINT_STATUS}"
+        }
 
     }
 
@@ -459,13 +475,18 @@ stage('PR Validation') {
         echo "Running Pull Request validation only"
 
         sh '''
-	. .ci-venv/bin/activate
+	    . .ci-venv/bin/activate
 
         ansible-playbook \
         -i inventories/dev/hosts \
         --syntax-check \
         site.yml
         '''
+
+        script {
+            env.SYNTAX_STATUS = "PASS"
+            echo "Quality Gate | Ansible Syntax: ${env.SYNTAX_STATUS}"
+        }
 
     }
 
@@ -491,6 +512,11 @@ stage('Release Validation') {
         --syntax-check \
         site.yml
         '''
+
+        script {
+            env.SYNTAX_STATUS = "PASS"
+            echo "Quality Gate | Ansible Syntax: ${env.SYNTAX_STATUS}"
+        }
 
     }
 }
@@ -621,9 +647,12 @@ stage('Validate Ansible Syntax') {
             def inventoryPath = env.DEPLOY_ENV.toLowerCase()
 
            runAnsiblePlaybook(
-	    inventoryPath,
-	    "--syntax-check"
-	)	 
+                inventoryPath,
+                "--syntax-check"
+	        )
+
+            env.SYNTAX_STATUS = "PASS"
+            echo "Quality Gate | Ansible Syntax: ${env.SYNTAX_STATUS}"
 
         }
 
@@ -667,6 +696,9 @@ stage('Deployment Preview') {
                 "--check --diff"
             )
 
+            env.PREVIEW_STATUS = "PASS"
+            echo "Quality Gate | Deployment Preview: ${env.PREVIEW_STATUS}"
+
         }
 
     }
@@ -700,6 +732,94 @@ stage('Molecule Test') {
 
         molecule test -s docker_compose
         '''
+
+        script {
+        env.MOLECULE_STATUS = "PASS"
+        echo "Quality Gate | Molecule Test: ${env.MOLECULE_STATUS}"
+        }
+    }
+}
+
+stage('Quality Gate') {
+
+    when {
+        expression {
+            return env.PIPELINE_TYPE == "PR" ||
+               env.PIPELINE_TYPE == "BRANCH" ||
+               env.PIPELINE_TYPE == "RELEASE"
+        }
+    }
+
+    steps {
+
+        script {
+
+            def requiredChecks = [
+                "YAML Lint"     : env.YAML_LINT_STATUS,
+                "Ansible Lint"  : env.ANSIBLE_LINT_STATUS,
+                "Ansible Syntax": env.SYNTAX_STATUS
+            ]
+
+            if (env.PIPELINE_TYPE == "PR" ||
+                env.PIPELINE_TYPE == "BRANCH") {
+
+                requiredChecks["Deployment Preview"] = env.PREVIEW_STATUS
+            }
+
+            if (env.PIPELINE_TYPE == "PR") {
+                requiredChecks["Molecule Test"] = env.MOLECULE_STATUS
+            }
+
+            def gateContext
+
+            if (env.DEPLOY_ENV == "PROD") {
+                gateContext = "SELECTED_ARTIFACT"
+            }
+            else {
+                gateContext = "SOURCE"
+            }
+
+            echo """
+            ============================
+            QUALITY GATE
+            ============================
+            Pipeline Type : ${env.PIPELINE_TYPE}
+            Environment   : ${env.DEPLOY_ENV}
+            Gate Context  : ${gateContext}
+            """
+
+            requiredChecks.each { checkName, status ->
+                echo "${checkName}: ${status}"
+            }
+
+            def failedChecks = requiredChecks.findAll { checkName, status ->
+                status != "PASS"
+            }
+
+            if (failedChecks) {
+
+                echo """
+                ============================
+                QUALITY GATE: FAILED
+                Pipeline Progression: BLOCKED
+                ============================
+                """
+
+                error(
+                    "Quality Gate failed: " +
+                    failedChecks.keySet().join(", ")
+                )
+            }
+
+            env.QUALITY_GATE_STATUS = "PASS"
+
+            echo """
+            ============================
+            QUALITY GATE: PASSED
+            Pipeline Progression: ALLOWED
+            ============================
+            """
+        }
     }
 }
 
