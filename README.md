@@ -19,6 +19,158 @@ Production-style Ansible automation and CI/CD deployment lab built on Proxmox.
 - Docker
 - Docker Compose
 
+## v2.9 - Quality Gates
+
+Released: September 2026
+
+### Added
+
+- Centralized Jenkins `Quality Gate` stage
+- Explicit validation status tracking across pipeline stages
+- Pipeline-aware quality gate requirements
+- Fail-closed quality gate behavior
+- Quality gate enforcement before pipeline progression
+- Quality gate integration with immutable artifact promotion
+- Production quality validation before manual deployment approval
+
+### Quality Gate Status Tracking
+
+The Jenkins pipeline now tracks the result of each validation stage:
+
+```text
+YAML_LINT_STATUS
+ANSIBLE_LINT_STATUS
+SYNTAX_STATUS
+PREVIEW_STATUS
+MOLECULE_STATUS
+QUALITY_GATE_STATUS
+
+```
+
+Quality gate status variables are initialized dynamically during pipeline execution and updated by each validation stage after successful completion.
+
+This ensures validation results persist correctly across pipeline stages and Jenkins agents.
+
+Validation stages report either `PASS` or `NOT_RUN`.
+
+The Quality Gate only allows pipeline progression when all checks required for the current pipeline type report `PASS`.
+
+### Pipeline-aware Quality Gates
+
+Required checks depend on the pipeline type:
+
+```text
+Pull Request
+    |
+    +-- YAML Lint
+    +-- Ansible Lint
+    +-- Ansible Syntax
+    +-- Deployment Preview
+    +-- Molecule Test
+    |
+    v
+Quality Gate
+
+Branch
+    |
+    +-- YAML Lint
+    +-- Ansible Lint
+    +-- Ansible Syntax
+    +-- Deployment Preview
+    |
+    v
+Quality Gate
+
+Release
+    |
+    +-- YAML Lint
+    +-- Ansible Lint
+    +-- Ansible Syntax
+    |
+    v
+Quality Gate
+```
+
+Pull Request pipelines perform validation only and do not execute deployments.
+
+Release branch pipelines require the base validation checks. A Pull Request created from a release branch follows the Pull Request quality gate policy and therefore also runs Deployment Preview and Molecule Test.
+
+### Fail-closed Quality Gate
+
+The Quality Gate fails when any required validation stage does not report `PASS`.
+
+Example successful Pull Request validation:
+
+```text
+YAML Lint:           PASS
+Ansible Lint:        PASS
+Ansible Syntax:      PASS
+Deployment Preview:  PASS
+Molecule Test:       PASS
+
+QUALITY GATE: PASSED
+Pipeline Progression: ALLOWED
+```
+
+A failed or missing required check prevents pipeline progression.
+
+This fail-closed behavior was validated during development when required checks remained `NOT_RUN`; the Quality Gate correctly prevented the pipeline from progressing.
+
+### Production Quality Gate
+
+Production deployment continues to promote an immutable artifact previously generated and validated by the `develop` pipeline.
+
+For production deployments, the Quality Gate operates in `SELECTED_ARTIFACT` context.
+
+```text
+develop
+    |
+    | Build + Validate
+    v
+Immutable Artifact
+    |
+    | Select Artifact Build
+    v
+main / PROD
+    |
+    | Verify Artifact Identity + Checksum
+    v
+Quality Gate
+    |
+    | Manual Approval
+    v
+PROD Deployment
+```
+
+The selected artifact must pass the required quality checks before the manual production approval stage becomes available.
+
+### Validation
+
+Successfully validated the v2.9 Quality Gate workflow across:
+
+- Pull Request validation
+- `develop` branch validation
+- Release candidate validation
+- Release Pull Request validation
+- `main` branch validation
+- Manual production deployment
+
+### Production Validation
+
+Successfully tested:
+
+- Jenkins PROD deployment: `main #29`
+- Artifact: `ansible-deployment-build-87.tar.gz`
+- Artifact Build: `#87`
+- Artifact SHA256: `26ccefec5c22ace1d05334d246086ea214e9fe2d4adcad470f875efbd29437da`
+- Checksum Status: `PASSED`
+- Quality Gate: `PASSED`
+- Pipeline Progression: `ALLOWED`
+- Approved By: `admin`
+- Deployment Status: `SUCCESS`
+- Deployment Report: `deployment-history/prod/deployment-29.json`
+- Release Tag: `v2.9.0`
+
 ## v2.8 - Rolling Production Deployment
 
 Released: September 2026
@@ -957,6 +1109,39 @@ Production deployments require manual approval
 Deployment activities are logged through Jenkins and Teams notifications
 
 ## Version History
+
+### v2.9
+
+Quality Gates and pipeline progression control:
+
+- Added centralized Jenkins `Quality Gate` stage
+- Added explicit validation status tracking for:
+  - YAML Lint
+  - Ansible Lint
+  - Ansible Syntax
+  - Deployment Preview
+  - Molecule Test
+- Added dynamic quality gate status initialization and runtime stage result tracking
+- Added pipeline-aware quality gate requirements
+- Pull Request pipelines require YAML Lint, Ansible Lint, Ansible Syntax, Deployment Preview, and Molecule Test
+- Branch pipelines require YAML Lint, Ansible Lint, Ansible Syntax, and Deployment Preview
+- Release branch pipelines require YAML Lint, Ansible Lint, and Ansible Syntax
+- Release Pull Requests follow the full Pull Request quality gate policy
+- Added fail-closed behavior when a required validation check does not report `PASS`
+- Added explicit `QUALITY GATE: PASSED` / `FAILED` reporting
+- Added `Pipeline Progression: ALLOWED` reporting after successful validation
+- Prevented pipeline progression when required quality checks fail
+- Integrated Quality Gates with the existing immutable artifact promotion workflow
+- Added `SELECTED_ARTIFACT` quality gate context for PROD deployments
+- Preserved manual approval before production deployment
+- Verified Pull Request, develop, release, main, and PROD quality gate workflows
+- Verified successful PROD promotion of `ansible-deployment-build-87.tar.gz`
+- Verified artifact SHA256 checksum before production deployment
+- Verified successful PROD deployment through Jenkins `main #29`
+- Verified deployment report `deployment-history/prod/deployment-29.json`
+- Added annotated production release tag `v2.9.0`
+- Completed post-release `main` → `develop` synchronization
+- Completed end-to-end feature → PR → develop → release → main → PROD → tag → synchronization workflow
 
 ### v2.8
 
