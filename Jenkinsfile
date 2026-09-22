@@ -225,6 +225,45 @@ stage('Detect Environment') {
 
 }
 
+stage('Release Version Validation') {
+
+    when {
+        expression {
+            return env.PIPELINE_TYPE == "RELEASE"
+        }
+    }
+
+    steps {
+
+        script {
+
+            echo """
+            ============================
+            RELEASE VERSION VALIDATION
+            ============================
+            Branch: ${env.BRANCH_NAME}
+            Release Version: ${env.RELEASE_VERSION}
+            ============================
+            """
+
+            if (!(env.RELEASE_VERSION ==~ /^v[0-9]+\.[0-9]+\.[0-9]+$/)) {
+
+                error("""
+                Invalid release version: ${env.RELEASE_VERSION}
+
+                Expected format:
+                vMAJOR.MINOR.PATCH
+
+                Example:
+                v3.0.0
+                """.stripIndent().trim())
+            }
+
+            echo "Release version format validated: ${env.RELEASE_VERSION}"
+        }
+    }
+}
+
 stage('Documentation Validation') {
 
     when {
