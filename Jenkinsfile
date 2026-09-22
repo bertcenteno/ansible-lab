@@ -421,6 +421,7 @@ stage('Verify Selected Artifact') {
         jq empty "$MANIFEST_NAME"
 
         MANIFEST_SCHEMA="$(jq -r '.schema_version // empty' "$MANIFEST_NAME")"
+        MANIFEST_RELEASE_VERSION="$(jq -r '.release_version // empty' "$MANIFEST_NAME")"
         MANIFEST_ARTIFACT="$(jq -r '.artifact.name // empty' "$MANIFEST_NAME")"
         MANIFEST_BUILD="$(jq -r '.artifact.build // empty' "$MANIFEST_NAME")"
         MANIFEST_SHA="$(jq -r '.artifact.sha256 // empty' "$MANIFEST_NAME")"
@@ -432,6 +433,7 @@ stage('Verify Selected Artifact') {
         ACTUAL_SHA="$(sha256sum "$ARTIFACT_NAME" | awk '{print $1}')"
 
         echo "Schema Version : $MANIFEST_SCHEMA"
+        echo "Release Version: $MANIFEST_RELEASE_VERSION"
         echo "Artifact       : $MANIFEST_ARTIFACT"
         echo "Artifact Build : $MANIFEST_BUILD"
         echo "Artifact SHA   : $MANIFEST_SHA"
@@ -442,6 +444,11 @@ stage('Verify Selected Artifact') {
 
         test "$MANIFEST_SCHEMA" = "1" || {
             echo "ERROR: Unsupported manifest schema: $MANIFEST_SCHEMA"
+            exit 1
+        }
+
+        test -n "$MANIFEST_RELEASE_VERSION" || {
+            echo "ERROR: Manifest release version is missing"
             exit 1
         }
 
@@ -510,6 +517,11 @@ stage('Verify Selected Artifact') {
         echo "Artifact manifest verification: PASSED"
         '''
         script {
+            env.ARTIFACT_RELEASE_VERSION = sh(
+                script: "jq -r '.release_version' '${env.MANIFEST_NAME}'",
+                returnStdout: true
+            ).trim()
+
             env.ARTIFACT_SOURCE_BRANCH = sh(
                 script: "jq -r '.source.branch' '${env.MANIFEST_NAME}'",
                 returnStdout: true
@@ -534,6 +546,7 @@ stage('Verify Selected Artifact') {
             Artifact Build  : ${env.SELECTED_ARTIFACT_BUILD}
             Artifact        : ${env.ARTIFACT_NAME}
             Manifest        : ${env.MANIFEST_NAME}
+            Release Version : ${env.ARTIFACT_RELEASE_VERSION}
             Source Branch   : ${env.ARTIFACT_SOURCE_BRANCH}
             Source Commit   : ${env.ARTIFACT_SOURCE_COMMIT}
             SHA256          : ${env.ARTIFACT_CHECKSUM}
@@ -999,6 +1012,7 @@ Message: ${GIT_COMMIT_MESSAGE}
 Author: ${GIT_AUTHOR_NAME}
 Build: #${BUILD_NUMBER}
 Artifact: ${env.ARTIFACT_NAME}
+Release Version: ${env.ARTIFACT_RELEASE_VERSION}
 
 Proceed with Ansible deployment?
 """,
