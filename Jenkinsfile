@@ -168,6 +168,7 @@ stage('Detect Environment') {
             else if (env.BRANCH_NAME.startsWith('release/')) {
                 env.PIPELINE_TYPE = "RELEASE"
                 env.DEPLOY_ENV = "VALIDATION"
+                env.RELEASE_VERSION = env.BRANCH_NAME.replaceFirst(/^release\//, '')
 
             }
             else if (env.BRANCH_NAME == 'main') {
@@ -206,6 +207,7 @@ stage('Detect Environment') {
             env.MOLECULE_STATUS = "NOT_RUN"
             env.MANIFEST_STATUS = "NOT_RUN"
             env.QUALITY_GATE_STATUS = "NOT_RUN"
+            env.RELEASE_VERSION = env.RELEASE_VERSION ?: "N/A"
 
             echo """
             ============================
@@ -213,6 +215,7 @@ stage('Detect Environment') {
             Branch: ${env.BRANCH_NAME}
             Environment: ${env.DEPLOY_ENV}
             Change ID: ${env.CHANGE_ID}
+            Release Version: ${env.RELEASE_VERSION}
             ============================
             """
 
