@@ -64,9 +64,11 @@ echo "===== CREATING ARTIFACT MANIFEST ====="
 
 ARTIFACT_CHECKSUM="$(awk '{print $1}' "${ARTIFACT_NAME}.sha256")"
 JENKINS_JOB="${JOB_NAME:-manual}"
+RELEASE_VERSION="${RELEASE_VERSION:-N/A}"
 
 jq -n \
     --arg schema_version "1" \
+    --arg release_version "$RELEASE_VERSION" \
     --arg artifact_name "$ARTIFACT_NAME" \
     --arg artifact_build "$BUILD_NUMBER" \
     --arg artifact_sha256 "$ARTIFACT_CHECKSUM" \
@@ -76,6 +78,7 @@ jq -n \
     --arg jenkins_build "$BUILD_NUMBER" \
     '{
         schema_version: $schema_version,
+        release_version: $release_version,
         artifact: {
             name: $artifact_name,
             build: $artifact_build,
