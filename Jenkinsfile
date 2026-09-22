@@ -168,6 +168,7 @@ stage('Detect Environment') {
             else if (env.BRANCH_NAME.startsWith('release/')) {
                 env.PIPELINE_TYPE = "RELEASE"
                 env.DEPLOY_ENV = "VALIDATION"
+                env.RELEASE_VERSION = env.BRANCH_NAME.replaceFirst(/^release\//, '')
 
             }
             else if (env.BRANCH_NAME == 'main') {
@@ -204,7 +205,9 @@ stage('Detect Environment') {
             env.SYNTAX_STATUS = "NOT_RUN"
             env.PREVIEW_STATUS = "NOT_RUN"
             env.MOLECULE_STATUS = "NOT_RUN"
+            env.MANIFEST_STATUS = "NOT_RUN"
             env.QUALITY_GATE_STATUS = "NOT_RUN"
+            env.RELEASE_VERSION = env.RELEASE_VERSION ?: "N/A"
 
             echo """
             ============================
@@ -212,6 +215,7 @@ stage('Detect Environment') {
             Branch: ${env.BRANCH_NAME}
             Environment: ${env.DEPLOY_ENV}
             Change ID: ${env.CHANGE_ID}
+            Release Version: ${env.RELEASE_VERSION}
             ============================
             """
 
@@ -219,6 +223,45 @@ stage('Detect Environment') {
 
     }
 
+}
+
+stage('Release Version Validation') {
+
+    when {
+        expression {
+            return env.PIPELINE_TYPE == "RELEASE"
+        }
+    }
+
+    steps {
+
+        script {
+
+            echo """
+            ============================
+            RELEASE VERSION VALIDATION
+            ============================
+            Branch: ${env.BRANCH_NAME}
+            Release Version: ${env.RELEASE_VERSION}
+            ============================
+            """
+
+            if (!(env.RELEASE_VERSION ==~ /^v[0-9]+\.[0-9]+\.[0-9]+$/)) {
+
+                error("""
+                Invalid release version: ${env.RELEASE_VERSION}
+
+                Expected format:
+                vMAJOR.MINOR.PATCH
+
+                Example:
+                v3.0.0
+                """.stripIndent().trim())
+            }
+
+            echo "Release version format validated: ${env.RELEASE_VERSION}"
+        }
+    }
 }
 
 stage('Documentation Validation') {
@@ -282,6 +325,7 @@ stage('Artifact Selection') {
 
             env.SELECTED_ARTIFACT_BUILD = params.ARTIFACT_BUILD.trim()
             env.ARTIFACT_NAME = "ansible-deployment-build-${env.SELECTED_ARTIFACT_BUILD}.tar.gz"
+            env.MANIFEST_NAME = "ansible-deployment-build-${env.SELECTED_ARTIFACT_BUILD}.manifest.json"
 
             echo """
             ============================
@@ -321,7 +365,7 @@ stage('Copy Selected Artifact') {
             copyArtifacts(
                 projectName: 'ansible-deployment-multibranch/develop',
                 selector: specific(env.SELECTED_ARTIFACT_BUILD),
-                filter: "${env.ARTIFACT_NAME},${env.ARTIFACT_NAME}.sha256",
+                filter: "${env.ARTIFACT_NAME},${env.ARTIFACT_NAME}.sha256,${env.MANIFEST_NAME}",
                 fingerprintArtifacts: true
             )
 
@@ -330,6 +374,7 @@ stage('Copy Selected Artifact') {
             sh """
             ls -lh '${env.ARTIFACT_NAME}'
             ls -lh '${env.ARTIFACT_NAME}.sha256'
+            ls -lh '${env.MANIFEST_NAME}'
             """
         }
     }
@@ -386,7 +431,11 @@ stage('Verify Selected Artifact') {
         ARTIFACT_BRANCH="$(tar -xOzf "$ARTIFACT_NAME" ansible-deployment/VERSION \
             | awk -F= '/^GIT_BRANCH=/ {print $2}')"
 
+        ARTIFACT_COMMIT="$(tar -xOzf "$ARTIFACT_NAME" ansible-deployment/VERSION \
+            | awk -F= '/^GIT_COMMIT=/ {print $2}')"
+
         test -n "$ARTIFACT_BRANCH"
+        test -n "$ARTIFACT_COMMIT"
 
         if [ "$ARTIFACT_BRANCH" != "develop" ]; then
             echo "ERROR: Artifact branch mismatch!"
@@ -396,12 +445,155 @@ stage('Verify Selected Artifact') {
         fi
 
         echo "Artifact source branch verified: $ARTIFACT_BRANCH"
+        echo "Artifact source commit verified: $ARTIFACT_COMMIT"
 
         echo
         echo "Artifact identity verified successfully."
         echo "Selected build : #$SELECTED_ARTIFACT_BUILD"
         echo "Artifact build : #$ARTIFACT_BUILD_FROM_VERSION"
+
+        echo
+        echo "===== VERIFY ARTIFACT MANIFEST ====="
+
+        test -f "$MANIFEST_NAME"
+
+        jq empty "$MANIFEST_NAME"
+
+        MANIFEST_SCHEMA="$(jq -r '.schema_version // empty' "$MANIFEST_NAME")"
+        MANIFEST_RELEASE_VERSION="$(jq -r '.release_version // empty' "$MANIFEST_NAME")"
+        MANIFEST_ARTIFACT="$(jq -r '.artifact.name // empty' "$MANIFEST_NAME")"
+        MANIFEST_BUILD="$(jq -r '.artifact.build // empty' "$MANIFEST_NAME")"
+        MANIFEST_SHA="$(jq -r '.artifact.sha256 // empty' "$MANIFEST_NAME")"
+        MANIFEST_BRANCH="$(jq -r '.source.branch // empty' "$MANIFEST_NAME")"
+        MANIFEST_COMMIT="$(jq -r '.source.commit // empty' "$MANIFEST_NAME")"
+        MANIFEST_JOB="$(jq -r '.jenkins.job // empty' "$MANIFEST_NAME")"
+        MANIFEST_JENKINS_BUILD="$(jq -r '.jenkins.build // empty' "$MANIFEST_NAME")"
+
+        ACTUAL_SHA="$(sha256sum "$ARTIFACT_NAME" | awk '{print $1}')"
+
+        echo "Schema Version : $MANIFEST_SCHEMA"
+        echo "Release Version: $MANIFEST_RELEASE_VERSION"
+        echo "Artifact       : $MANIFEST_ARTIFACT"
+        echo "Artifact Build : $MANIFEST_BUILD"
+        echo "Artifact SHA   : $MANIFEST_SHA"
+        echo "Source Branch  : $MANIFEST_BRANCH"
+        echo "Source Commit  : $MANIFEST_COMMIT"
+        echo "Jenkins Job    : $MANIFEST_JOB"
+        echo "Jenkins Build  : $MANIFEST_JENKINS_BUILD"
+
+        test "$MANIFEST_SCHEMA" = "1" || {
+            echo "ERROR: Unsupported manifest schema: $MANIFEST_SCHEMA"
+            exit 1
+        }
+
+        test -n "$MANIFEST_RELEASE_VERSION" || {
+            echo "ERROR: Manifest release version is missing"
+            exit 1
+        }
+
+        test "$MANIFEST_ARTIFACT" = "$ARTIFACT_NAME" || {
+            echo "ERROR: Manifest artifact name mismatch"
+            exit 1
+        }
+
+        test "$MANIFEST_BUILD" = "$SELECTED_ARTIFACT_BUILD" || {
+            echo "ERROR: Manifest artifact build mismatch"
+            exit 1
+        }
+
+        test "$MANIFEST_SHA" = "$ACTUAL_SHA" || {
+            echo "ERROR: Manifest checksum does not match artifact"
+            exit 1
+        }
+
+        test "$MANIFEST_BRANCH" = "develop" || {
+            echo "ERROR: Artifact was not built from develop"
+            exit 1
+        }
+
+        test -n "$MANIFEST_COMMIT" || {
+            echo "ERROR: Manifest source commit is missing"
+            exit 1
+        }
+
+        test "$MANIFEST_JOB" = "ansible-deployment-multibranch/develop" || {
+            echo "ERROR: Unexpected Jenkins source job: $MANIFEST_JOB"
+            exit 1
+        }
+
+        test "$MANIFEST_JENKINS_BUILD" = "$SELECTED_ARTIFACT_BUILD" || {
+            echo "ERROR: Manifest Jenkins build mismatch"
+            exit 1
+        }
+
+        echo
+        echo "===== CROSS-CHECK ARTIFACT IDENTITY ====="
+
+        test "$MANIFEST_BUILD" = "$ARTIFACT_BUILD_FROM_VERSION" || {
+            echo "ERROR: Manifest and VERSION build numbers do not match"
+            echo "Manifest build : $MANIFEST_BUILD"
+            echo "VERSION build  : $ARTIFACT_BUILD_FROM_VERSION"
+            exit 1
+        }
+
+        test "$MANIFEST_BRANCH" = "$ARTIFACT_BRANCH" || {
+            echo "ERROR: Manifest and VERSION source branches do not match"
+            echo "Manifest branch : $MANIFEST_BRANCH"
+            echo "VERSION branch  : $ARTIFACT_BRANCH"
+            exit 1
+        }
+
+        test "$MANIFEST_COMMIT" = "$ARTIFACT_COMMIT" || {
+            echo "ERROR: Manifest and VERSION source commits do not match"
+            echo "Manifest commit : $MANIFEST_COMMIT"
+            echo "VERSION commit  : $ARTIFACT_COMMIT"
+            exit 1
+        }
+
+        echo "Manifest ↔ VERSION identity cross-check: PASSED"
+
+        echo
+        echo "Artifact manifest verification: PASSED"
         '''
+        script {
+            env.ARTIFACT_RELEASE_VERSION = sh(
+                script: "jq -r '.release_version' '${env.MANIFEST_NAME}'",
+                returnStdout: true
+            ).trim()
+
+            env.ARTIFACT_SOURCE_BRANCH = sh(
+                script: "jq -r '.source.branch' '${env.MANIFEST_NAME}'",
+                returnStdout: true
+            ).trim()
+
+            env.ARTIFACT_SOURCE_COMMIT = sh(
+                script: "jq -r '.source.commit' '${env.MANIFEST_NAME}'",
+                returnStdout: true
+            ).trim()
+
+            env.ARTIFACT_CHECKSUM = sh(
+                script: "jq -r '.artifact.sha256' '${env.MANIFEST_NAME}'",
+                returnStdout: true
+            ).trim()
+
+            env.MANIFEST_STATUS = "PASS"
+
+            echo """
+            ==============================
+            VERIFIED ARTIFACT IDENTITY
+            ==============================
+            Artifact Build  : ${env.SELECTED_ARTIFACT_BUILD}
+            Artifact        : ${env.ARTIFACT_NAME}
+            Manifest        : ${env.MANIFEST_NAME}
+            Release Version : ${env.ARTIFACT_RELEASE_VERSION}
+            Source Branch   : ${env.ARTIFACT_SOURCE_BRANCH}
+            Source Commit   : ${env.ARTIFACT_SOURCE_COMMIT}
+            SHA256          : ${env.ARTIFACT_CHECKSUM}
+            Manifest Status : ${env.MANIFEST_STATUS}
+            ==============================
+            """
+        }
+
     }
 }
 
@@ -533,6 +725,7 @@ stage('Build Artifact') {
 
         script {
             env.ARTIFACT_NAME = "ansible-deployment-build-${BUILD_NUMBER}.tar.gz"
+            env.MANIFEST_NAME = "ansible-deployment-build-${BUILD_NUMBER}.manifest.json"
         }
 
         sh '''
@@ -546,17 +739,22 @@ stage('Build Artifact') {
         echo "===== VERIFY ARTIFACT ====="
 
         test -f "$ARTIFACT_NAME"
-
         tar -tzf "$ARTIFACT_NAME" > /dev/null
 
-        echo "Artifact verified successfully:"
-        ls -lh "$ARTIFACT_NAME"
+        test -f "$MANIFEST_NAME"
+        jq empty "$MANIFEST_NAME"
+
+        echo "Artifact release unit verified successfully:"
+        ls -lh \
+            "$ARTIFACT_NAME" \
+            "${ARTIFACT_NAME}.sha256" \
+            "$MANIFEST_NAME"
         '''
 
         echo "===== ARCHIVE ARTIFACT ====="
 
         archiveArtifacts(
-            artifacts: "${env.ARTIFACT_NAME},${env.ARTIFACT_NAME}.sha256",
+            artifacts: "${env.ARTIFACT_NAME},${env.ARTIFACT_NAME}.sha256,${env.MANIFEST_NAME}",
             fingerprint: true
         )
     }
@@ -762,12 +960,15 @@ stage('Quality Gate') {
 
             if (env.PIPELINE_TYPE == "PR" ||
                 env.PIPELINE_TYPE == "BRANCH") {
-
                 requiredChecks["Deployment Preview"] = env.PREVIEW_STATUS
             }
 
             if (env.PIPELINE_TYPE == "PR") {
                 requiredChecks["Molecule Test"] = env.MOLECULE_STATUS
+            }
+
+            if (env.DEPLOY_ENV == "PROD") {
+                requiredChecks["Artifact Manifest"] = env.MANIFEST_STATUS
             }
 
             def gateContext
@@ -850,6 +1051,7 @@ Message: ${GIT_COMMIT_MESSAGE}
 Author: ${GIT_AUTHOR_NAME}
 Build: #${BUILD_NUMBER}
 Artifact: ${env.ARTIFACT_NAME}
+Release Version: ${env.ARTIFACT_RELEASE_VERSION}
 
 Proceed with Ansible deployment?
 """,
