@@ -356,7 +356,7 @@ stage('Artifact Selection') {
             env.SELECTED_ARTIFACT_BUILD = params.ARTIFACT_BUILD.trim()
 
             env.ARTIFACT_SOURCE_JOB =
-                "ansible-deployment-multibranch/release/${env.SELECTED_RELEASE_VERSION}"
+                "ansible-deployment-multibranch/release%2F${env.SELECTED_RELEASE_VERSION}"
 
             env.ARTIFACT_NAME =
                 "ansible-deployment-build-${env.SELECTED_ARTIFACT_BUILD}.tar.gz"
