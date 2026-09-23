@@ -19,6 +19,174 @@ Production-style Ansible automation and CI/CD deployment lab built on Proxmox.
 - Docker
 - Docker Compose
 
+## v3.0 - Complete Delivery Platform
+
+Released: September 23, 2026
+
+### Added
+
+- Release branch artifact generation
+- Release version detection and validation
+- Immutable artifact promotion from release branches
+- Release version and artifact build selection for PROD deployment
+- Artifact checksum verification
+- Artifact manifest verification
+- Artifact source branch and commit verification
+- Manifest and `VERSION` identity cross-checking
+- Release-specific Jenkins artifact source handling
+- Manual production approval after artifact verification and quality gates
+- Deployment report generation for production deployments
+- End-to-end release-to-production validation
+
+### Release Version Management
+
+Release branches use the following naming convention:
+
+```text
+release/vMAJOR.MINOR.PATCH
+```
+
+Example:
+
+```text
+release/v3.0.0
+```
+
+The Jenkins pipeline detects release branches and extracts the release version automatically.
+
+The release version is validated using the following format:
+
+```text
+vMAJOR.MINOR.PATCH
+```
+
+Examples of valid release versions:
+
+```text
+v3.0.0
+v3.1.0
+v10.2.15
+```
+
+Invalid release version formats are rejected before the release pipeline continues.
+
+### Immutable Release Artifacts
+
+Release branches are responsible for generating the immutable deployment artifact.
+
+The release pipeline generates:
+
+```text
+ansible-deployment-build-<BUILD_NUMBER>.tar.gz
+ansible-deployment-build-<BUILD_NUMBER>.tar.gz.sha256
+ansible-deployment-build-<BUILD_NUMBER>.manifest.json
+```
+
+The artifact contains the deployment content together with its build and source identity.
+
+The SHA256 file provides checksum verification, while the manifest records the artifact metadata used during production promotion.
+
+### Release Artifact Promotion
+
+Production deployments no longer select an artifact from the `develop` Jenkins job.
+
+The production pipeline explicitly selects:
+
+```text
+RELEASE_VERSION
+ARTIFACT_BUILD
+```
+
+Example from the v3.0.0 release:
+
+```text
+RELEASE_VERSION = v3.0.0
+ARTIFACT_BUILD  = 6
+```
+
+The selected artifact is copied from the corresponding release Jenkins job.
+
+For Jenkins Multibranch Pipeline jobs, the release branch is referenced using an encoded branch path.
+
+Example:
+
+```text
+ansible-deployment-multibranch/release%2Fv3.0.0
+```
+
+### Artifact Identity Verification
+
+Before a production deployment proceeds, the selected artifact is verified against its expected release identity.
+
+The pipeline verifies:
+
+- Artifact build number
+- Release version
+- Source branch
+- Source commit
+- Artifact SHA256 checksum
+- Artifact manifest
+- Jenkins source job
+- Jenkins source build number
+
+The artifact `VERSION` file and manifest are cross-checked to ensure they describe the same artifact.
+
+Example:
+
+```text
+Selected Release : v3.0.0
+Artifact Build   : 6
+Source Branch    : release/v3.0.0
+Source Commit    : 4003223
+Manifest Status  : PASS
+```
+
+A mismatch causes the production pipeline to stop before deployment.
+
+### Production Deployment Flow
+
+The v3.0 production workflow promotes an immutable artifact from a release branch to production.
+
+```text
+release/v3.0.0
+       |
+       v
+Build Artifact
+       |
+       v
+Immutable Artifact
+       |
+       v
+main
+       |
+       v
+Select Release + Artifact Build
+       |
+       v
+Copy Artifact
+       |
+       v
+Verify Identity + Checksum
+       |
+       v
+Quality Gate
+       |
+       v
+Manual Approval
+       |
+       v
+PROD Deployment
+       |
+       v
+Deployment Report
+```
+
+Production deployment requires the release version and artifact build number to identify the artifact being promoted.
+
+The selected artifact is verified before the manual production approval stage.
+
+After approval, the verified artifact is deployed to the production environment and the deployment result is recorded in the deployment history.
+
 ## v2.9 - Quality Gates
 
 Released: September 2026
@@ -1109,6 +1277,29 @@ Production deployments require manual approval
 Deployment activities are logged through Jenkins and Teams notifications
 
 ## Version History
+
+### v3.0
+
+Complete release-to-production delivery platform:
+
+- Added release branch artifact generation
+- Added release version detection and validation
+- Added immutable artifact promotion from release branches
+- Added `RELEASE_VERSION` and `ARTIFACT_BUILD` selection for PROD deployments
+- Added release-specific Jenkins artifact source handling
+- Added artifact SHA256 checksum verification
+- Added artifact manifest verification
+- Added artifact source branch and commit verification
+- Added manifest and `VERSION` identity cross-checking
+- Added production artifact identity validation
+- Preserved Quality Gate enforcement before production approval
+- Preserved manual production approval before deployment
+- Added production deployment report generation
+- Validated the complete release → main → PROD workflow
+- Validated production deployment using release `v3.0.0`
+- Validated artifact `ansible-deployment-build-6.tar.gz`
+- Validated production deployment through Jenkins `main #39`
+- Validated deployment report `deployment-history/prod/deployment-39.json`
 
 ### v2.9
 
