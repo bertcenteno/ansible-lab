@@ -75,6 +75,12 @@ pipeline {
 
     parameters {
         string(
+            name: 'RELEASE_VERSION',
+            defaultValue: '',
+            description: 'Release version to promote to PROD. Example: v3.0.0'
+        )
+
+        string(
             name: 'ARTIFACT_BUILD',
             defaultValue: '',
             description: 'Jenkins build number of the artifact to deploy. Example: 63'
@@ -305,12 +311,33 @@ stage('Artifact Selection') {
 
         script {
 
+            if (!params.RELEASE_VERSION?.trim()) {
+                error("""
+                No release version specified.
+
+                Please provide RELEASE_VERSION.
+                Example: v3.0.0
+                """.stripIndent().trim())
+            }
+
+            if (!(params.RELEASE_VERSION.trim() ==~ /^v[0-9]+\.[0-9]+\.[0-9]+$/)) {
+                error("""
+                Invalid release version.
+
+                RELEASE_VERSION must use:
+                vMAJOR.MINOR.PATCH
+
+                Example:
+                v3.0.0
+                """.stripIndent().trim())
+            }
+
             if (!params.ARTIFACT_BUILD?.trim()) {
                 error("""
                 No artifact build specified.
 
                 Please provide ARTIFACT_BUILD.
-                Example: 63
+                Example: 2
                 """.stripIndent().trim())
             }
 
@@ -319,21 +346,32 @@ stage('Artifact Selection') {
                 Invalid artifact build number.
 
                 ARTIFACT_BUILD must be a positive Jenkins build number.
-                Example: 64
+                Example: 2
                 """.stripIndent().trim())
             }
 
+            env.SELECTED_RELEASE_VERSION = params.RELEASE_VERSION.trim()
             env.SELECTED_ARTIFACT_BUILD = params.ARTIFACT_BUILD.trim()
-            env.ARTIFACT_NAME = "ansible-deployment-build-${env.SELECTED_ARTIFACT_BUILD}.tar.gz"
-            env.MANIFEST_NAME = "ansible-deployment-build-${env.SELECTED_ARTIFACT_BUILD}.manifest.json"
+
+            env.ARTIFACT_SOURCE_JOB =
+                "ansible-deployment-multibranch/release/${env.SELECTED_RELEASE_VERSION}"
+
+            env.ARTIFACT_NAME =
+                "ansible-deployment-build-${env.SELECTED_ARTIFACT_BUILD}.tar.gz"
+
+            env.MANIFEST_NAME =
+                "ansible-deployment-build-${env.SELECTED_ARTIFACT_BUILD}.manifest.json"
 
             echo """
             ============================
             ARTIFACT SELECTION
             ============================
-            Environment: ${env.DEPLOY_ENV}
-            Artifact Build: #${env.SELECTED_ARTIFACT_BUILD}
-            Artifact: ${env.ARTIFACT_NAME}
+            Environment       : ${env.DEPLOY_ENV}
+            Release Version   : ${env.SELECTED_RELEASE_VERSION}
+            Source Job        : ${env.ARTIFACT_SOURCE_JOB}
+            Artifact Build    : #${env.SELECTED_ARTIFACT_BUILD}
+            Artifact          : ${env.ARTIFACT_NAME}
+            Manifest          : ${env.MANIFEST_NAME}
             ============================
             """
         }
@@ -356,14 +394,14 @@ stage('Copy Selected Artifact') {
             ============================
             COPY SELECTED ARTIFACT
             ============================
-            Source Job: ansible-deployment-multibranch/develop
+            Source Job: ${env.ARTIFACT_SOURCE_JOB}
             Build: #${env.SELECTED_ARTIFACT_BUILD}
             Artifact: ${env.ARTIFACT_NAME}
             ============================
             """
 
             copyArtifacts(
-                projectName: 'ansible-deployment-multibranch/develop',
+                projectName: env.ARTIFACT_SOURCE_JOB,
                 selector: specific(env.SELECTED_ARTIFACT_BUILD),
                 filter: "${env.ARTIFACT_NAME},${env.ARTIFACT_NAME}.sha256,${env.MANIFEST_NAME}",
                 fingerprintArtifacts: true
@@ -437,9 +475,11 @@ stage('Verify Selected Artifact') {
         test -n "$ARTIFACT_BRANCH"
         test -n "$ARTIFACT_COMMIT"
 
-        if [ "$ARTIFACT_BRANCH" != "develop" ]; then
+        EXPECTED_RELEASE_BRANCH="release/${SELECTED_RELEASE_VERSION}"
+
+        if [ "$ARTIFACT_BRANCH" != "$EXPECTED_RELEASE_BRANCH" ]; then
             echo "ERROR: Artifact branch mismatch!"
-            echo "Expected branch : develop"
+            echo "Expected branch : $EXPECTED_RELEASE_BRANCH"
             echo "Artifact branch : $ARTIFACT_BRANCH"
             exit 1
         fi
@@ -491,6 +531,13 @@ stage('Verify Selected Artifact') {
             exit 1
         }
 
+        test "$MANIFEST_RELEASE_VERSION" = "$SELECTED_RELEASE_VERSION" || {
+            echo "ERROR: Manifest release version mismatch"
+            echo "Selected release : $SELECTED_RELEASE_VERSION"
+            echo "Manifest release : $MANIFEST_RELEASE_VERSION"
+            exit 1
+        }
+
         test "$MANIFEST_ARTIFACT" = "$ARTIFACT_NAME" || {
             echo "ERROR: Manifest artifact name mismatch"
             exit 1
@@ -506,8 +553,10 @@ stage('Verify Selected Artifact') {
             exit 1
         }
 
-        test "$MANIFEST_BRANCH" = "develop" || {
-            echo "ERROR: Artifact was not built from develop"
+        test "$MANIFEST_BRANCH" = "$EXPECTED_RELEASE_BRANCH" || {
+            echo "ERROR: Artifact manifest source branch mismatch"
+            echo "Expected branch : $EXPECTED_RELEASE_BRANCH"
+            echo "Manifest branch  : $MANIFEST_BRANCH"
             exit 1
         }
 
@@ -516,8 +565,9 @@ stage('Verify Selected Artifact') {
             exit 1
         }
 
-        test "$MANIFEST_JOB" = "ansible-deployment-multibranch/develop" || {
+        test "$MANIFEST_JOB" = "$ARTIFACT_SOURCE_JOB" || {
             echo "ERROR: Unexpected Jenkins source job: $MANIFEST_JOB"
+            echo "Expected Jenkins job: $ARTIFACT_SOURCE_JOB"
             exit 1
         }
 
@@ -585,7 +635,8 @@ stage('Verify Selected Artifact') {
             Artifact Build  : ${env.SELECTED_ARTIFACT_BUILD}
             Artifact        : ${env.ARTIFACT_NAME}
             Manifest        : ${env.MANIFEST_NAME}
-            Release Version : ${env.ARTIFACT_RELEASE_VERSION}
+            Selected Release : ${env.SELECTED_RELEASE_VERSION}
+            Artifact Release : ${env.ARTIFACT_RELEASE_VERSION}
             Source Branch   : ${env.ARTIFACT_SOURCE_BRANCH}
             Source Commit   : ${env.ARTIFACT_SOURCE_COMMIT}
             SHA256          : ${env.ARTIFACT_CHECKSUM}
