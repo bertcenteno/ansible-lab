@@ -102,7 +102,9 @@ pipeline {
                 artifactNumToKeepStr: '10'
             )
         )
-        copyArtifactPermission('ansible-deployment-multibranch/develop')
+        copyArtifactPermission(
+            'ansible-deployment-multibranch/develop,ansible-deployment-multibranch/release/*'
+        )
 
 	}
 
