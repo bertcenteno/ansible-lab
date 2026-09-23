@@ -103,7 +103,7 @@ pipeline {
             )
         )
         copyArtifactPermission(
-            'ansible-deployment-multibranch/develop,ansible-deployment-multibranch/release/*'
+            'ansible-deployment-multibranch/main'
         )
 
 	}
