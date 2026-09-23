@@ -27,3 +27,14 @@ variable "instance_name" {
   type        = string
   default     = "v3.1-terraform-lab"
 }
+
+variable "bastion_private_ip" {
+  description = "Private IP address of the bastion host allowed to SSH to the Terraform lab instance"
+  type        = string
+  default     = "10.77.2.172"
+}
+
+variable "ssh_public_key_path" {
+  description = "Path to the SSH public key used for the Terraform lab EC2 instance"
+  type        = string
+}

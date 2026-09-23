@@ -14,3 +14,4 @@ __pycache__/
 *.tfstate.*
 crash.log
 crash.*.log
+*.tfvars
