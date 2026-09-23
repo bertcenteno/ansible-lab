@@ -717,7 +717,8 @@ stage('Build Artifact') {
 
     when {
         expression {
-            return env.BRANCH_NAME == 'develop'
+            return env.BRANCH_NAME == 'develop' ||
+                   env.PIPELINE_TYPE == 'RELEASE'
         }
     }
 
