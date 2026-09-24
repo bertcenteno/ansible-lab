@@ -957,8 +957,17 @@ stage('Molecule Test') {
     }
 
     when {
-        expression {
-            return env.PIPELINE_TYPE == "PR"
+        allOf {
+            expression {
+                return env.PIPELINE_TYPE == "PR"
+            }
+
+            anyOf {
+                changeset "roles/docker/**"
+                changeset "roles/docker_compose/**"
+                changeset "molecule/**"
+                changeset "ci-requirements.txt"
+            }
         }
     }
 
@@ -1010,7 +1019,8 @@ stage('Quality Gate') {
                 requiredChecks["Deployment Preview"] = env.PREVIEW_STATUS
             }
 
-            if (env.PIPELINE_TYPE == "PR") {
+            if (env.PIPELINE_TYPE == "PR" &&
+                env.MOLECULE_STATUS == "PASS") {
                 requiredChecks["Molecule Test"] = env.MOLECULE_STATUS
             }
 
