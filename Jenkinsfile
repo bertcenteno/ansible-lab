@@ -916,8 +916,7 @@ stage('Deployment Preview') {
 
     when {
         expression {
-            return env.PIPELINE_TYPE == "PR" ||
-                   env.PIPELINE_TYPE == "BRANCH"
+            return env.PIPELINE_TYPE == "BRANCH"
         }
     }
 
@@ -925,13 +924,7 @@ stage('Deployment Preview') {
 
         script {
 
-            def inventoryPath
-
-            if (env.PIPELINE_TYPE == "PR") {
-                inventoryPath = "dev"
-            } else {
-                inventoryPath = env.DEPLOY_ENV.toLowerCase()
-            }
+            def inventoryPath = env.DEPLOY_ENV.toLowerCase()
 
             echo """
             ============================
@@ -964,8 +957,17 @@ stage('Molecule Test') {
     }
 
     when {
-        expression {
-            return env.PIPELINE_TYPE == "PR"
+        allOf {
+            expression {
+                return env.PIPELINE_TYPE == "PR"
+            }
+
+            anyOf {
+                changeset "roles/docker/**"
+                changeset "roles/docker_compose/**"
+                changeset "molecule/**"
+                changeset "ci-requirements.txt"
+            }
         }
     }
 
@@ -1012,12 +1014,12 @@ stage('Quality Gate') {
                 "Ansible Syntax": env.SYNTAX_STATUS
             ]
 
-            if (env.PIPELINE_TYPE == "PR" ||
-                env.PIPELINE_TYPE == "BRANCH") {
+            if (env.PIPELINE_TYPE == "BRANCH") {
                 requiredChecks["Deployment Preview"] = env.PREVIEW_STATUS
             }
 
-            if (env.PIPELINE_TYPE == "PR") {
+            if (env.PIPELINE_TYPE == "PR" &&
+                env.MOLECULE_STATUS == "PASS") {
                 requiredChecks["Molecule Test"] = env.MOLECULE_STATUS
             }
 

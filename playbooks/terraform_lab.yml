@@ -1,0 +1,9 @@
+---
+- name: Configure Terraform Lab
+  hosts: terraform_lab
+  become: true
+
+  roles:
+    - role: terraform_lab
+      tags:
+        - terraform_lab
