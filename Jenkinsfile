@@ -916,8 +916,7 @@ stage('Deployment Preview') {
 
     when {
         expression {
-            return env.PIPELINE_TYPE == "PR" ||
-                   env.PIPELINE_TYPE == "BRANCH"
+            return env.PIPELINE_TYPE == "BRANCH"
         }
     }
 
@@ -925,13 +924,7 @@ stage('Deployment Preview') {
 
         script {
 
-            def inventoryPath
-
-            if (env.PIPELINE_TYPE == "PR") {
-                inventoryPath = "dev"
-            } else {
-                inventoryPath = env.DEPLOY_ENV.toLowerCase()
-            }
+            def inventoryPath = env.DEPLOY_ENV.toLowerCase()
 
             echo """
             ============================
