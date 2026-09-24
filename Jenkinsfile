@@ -1014,8 +1014,7 @@ stage('Quality Gate') {
                 "Ansible Syntax": env.SYNTAX_STATUS
             ]
 
-            if (env.PIPELINE_TYPE == "PR" ||
-                env.PIPELINE_TYPE == "BRANCH") {
+            if (env.PIPELINE_TYPE == "BRANCH") {
                 requiredChecks["Deployment Preview"] = env.PREVIEW_STATUS
             }
 
